@@ -10,5 +10,6 @@ package it.unisa.diem.database;
  * @author admin
  */
 public class DatabaseManager {
+    private String string;
     
 }
