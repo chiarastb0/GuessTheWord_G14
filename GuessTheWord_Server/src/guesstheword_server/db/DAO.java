@@ -15,7 +15,7 @@ import java.util.Optional;
    Separa logica di gestione DB dal resto
 */
 public interface DAO<T>{
-    Optional<T> selectById(int id); //Trova un elemento per ID
+    Optional<T> selectById(long id); //Trova un elemento per ID
     List<T> selectAll();    //Prende tutti gli elementi
     void insert(T t);
     void update(T t);
