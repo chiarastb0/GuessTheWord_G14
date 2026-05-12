@@ -19,10 +19,26 @@ public class DatabaseManager {
             try{
                 Class.forName("org.sqlite.JDBC");
                 conn = DriverManager.getConnection(URL);
+                System.out.println("Connessione al database SQLite stabilita con successo.");
             } catch (ClassNotFoundException e) {
                 System.err.println("Driver non trovato: " + e.getMessage());   
+                e.printStackTrace();
             }
         }
         return conn;
+    }
+    
+    /**
+     * Chiude la connessione al database in modo sicuro.
+     */
+    public static void closeConnection() {
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.close();
+                System.out.println("Connessione al database chiusa.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Errore durante la chiusura del database: " + e.getMessage());
+        }
     }
 }
