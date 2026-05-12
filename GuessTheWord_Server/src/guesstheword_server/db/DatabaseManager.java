@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package guesstheword_server.db;
+import guesstheword_server.ConfigManager;
 import java.sql.*;
 
 /**
@@ -11,14 +12,14 @@ import java.sql.*;
  */
 public class DatabaseManager {
     //Da Modificare aggiungendo lettura da file .properties
-    private static final String URL = "jdbc:sqlite:db/database.db";
     private static Connection conn = null;
     
     public static Connection  getConnection() throws SQLException {
         if(conn == null || conn.isClosed()) {
             try{
                 Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(URL);
+                String url = ConfigManager.getDbUrl();
+                conn = DriverManager.getConnection(url);
                 System.out.println("Connessione al database SQLite stabilita con successo.");
             } catch (ClassNotFoundException e) {
                 System.err.println("Driver non trovato: " + e.getMessage());   
