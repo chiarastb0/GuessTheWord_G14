@@ -111,6 +111,26 @@ public class RisultatoDAO implements DAO<Risultato>{
         }
     }
     
+    public int getNumeroVittorie(int idUtente) {
+        int count = 0;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT COUNT(*) FROM RISULTATO WHERE id_utente = " + idUtente
+                             + " AND esito = 'VITTORIA'")) {
+
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            throw new DBException("Errore conteggio vittorie", e);
+        }
+
+        return count;
+    }
+    
     public Risultato getRisultato(ResultSet rs) throws SQLException {
         long idRisultato = rs.getLong("id_risultato");
         long idPartita = rs.getLong("id_partita");
