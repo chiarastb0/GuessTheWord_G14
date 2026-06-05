@@ -9,13 +9,13 @@ package guesstheword_server.model;
  * @author angel
  */
 public class Partita {
-   private int idPartita;
+   private long idPartita;
    private String dataOra;
    private String parolaNascosta;
    
    public Partita(){}
    
-   public Partita(int idPartita, String dataOra, String parolaNascosta){
+   public Partita(long idPartita, String dataOra, String parolaNascosta){
        this.idPartita = idPartita;
        this.dataOra = dataOra;
        this.parolaNascosta = parolaNascosta;
@@ -26,11 +26,11 @@ public class Partita {
        this.parolaNascosta = parolaNascosta;
    }
 
-    public int getIdPartita() {
+    public long getIdPartita() {
         return idPartita;
     }
 
-    public void setIdPartita(int id_partita) {
+    public void setIdPartita(long id_partita) {
         this.idPartita = id_partita;
     }
 

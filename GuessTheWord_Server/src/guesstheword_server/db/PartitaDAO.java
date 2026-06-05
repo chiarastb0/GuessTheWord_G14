@@ -17,7 +17,7 @@ public class PartitaDAO implements DAO<Partita> {
     @Override
     public Optional<Partita> selectById(long id) {
         Optional<Partita> result = Optional.empty();
-        String sql = "SELECT * FROM PARTITE WHERE id_partita = ?";
+        String sql = "SELECT * FROM PARTITA WHERE id_partita = ?";
         
         try(Connection conn = DatabaseManager.getConnection();
             PreparedStatement pst = conn.prepareStatement(sql)){
@@ -32,14 +32,13 @@ public class PartitaDAO implements DAO<Partita> {
         } catch (SQLException e){
             throw new DBException("Errore durante la selectById (Partita)", e);
         }
-        //In caso non trova nulla torna un Optional vuoto!
         return result;
     }
 
     @Override
     public List<Partita> selectAll() {
         List<Partita> partite = new ArrayList<>();
-        String sql ="SELECT * FROM PARTITE";
+        String sql ="SELECT * FROM PARTITA";
         
         try(Connection conn = DatabaseManager.getConnection();
             Statement stm = conn.createStatement();
@@ -58,8 +57,7 @@ public class PartitaDAO implements DAO<Partita> {
 
     @Override
     public void insert(Partita t) {
-        //ATTENZIONE: non inserire id_partita (lo crea direttamente SQLite)
-        String sql = "INSERT INTO PARTITE (data_ora, parola_nascosta) VALUES (?,?)";
+        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta) VALUES (?,?)";
         try(Connection conn = DatabaseManager.getConnection();
             PreparedStatement pst = conn.prepareStatement(sql)){
             
@@ -67,7 +65,7 @@ public class PartitaDAO implements DAO<Partita> {
             pst.setString(2, t.getParolaNascosta());
             pst.executeUpdate();
             
-            System.out.println("Partita inserita con successo nel database.");
+            System.out.println("Partita inserita con successo.");
             
         } catch (SQLException e){
             throw new DBException("Errore durante la insert (Partita)", e);
@@ -76,14 +74,14 @@ public class PartitaDAO implements DAO<Partita> {
 
     @Override
     public void update(Partita t) {
-        String sql = "UPDATE PARTITE SET data_ora = ?, parola_nascosta = ? WHERE id_partita = ?";
+        String sql = "UPDATE PARTITA SET data_ora = ?, parola_nascosta = ? WHERE id_partita = ?";
         
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)){
                 
                 pst.setString(1, t.getDataOra());
                 pst.setString(2, t.getParolaNascosta());
-                pst.setInt(3, t.getIdPartita());
+                pst.setLong(3, t.getIdPartita());
                 pst.executeUpdate();
                 
                 System.out.println("Partita aggiornata con successo.");
@@ -95,12 +93,13 @@ public class PartitaDAO implements DAO<Partita> {
 
     @Override
     public void delete(Partita t) {
-        String sql = "DELETE FROM PARTITE WHERE id_partita = ?";
+        String sql = "DELETE FROM PARTITA WHERE id_partita = ?";
         
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)){
                 
-                pst.setInt(1, t.getIdPartita());
+                pst.setLong(1, t.getIdPartita());
+                pst.executeUpdate();
                 
         } catch (SQLException e){
             throw new DBException("Errore durante il delate (Partita)", e);
@@ -108,7 +107,7 @@ public class PartitaDAO implements DAO<Partita> {
     }
     
     public Partita getPartita(ResultSet rs) throws SQLException {
-        int  idPartita = rs.getInt("id_partita");
+        long  idPartita = rs.getLong("id_partita");
         String dataOra = rs.getString("data_ora");
         String parolaNascosta = rs.getString("parola_nascosta"); 
         

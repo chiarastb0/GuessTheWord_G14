@@ -21,49 +21,59 @@ import java.util.Optional;
  */
 public class UtenteDAO implements DAO<Utente> {
     
+    @Override
     public Optional<Utente> selectById(long id) {
-        Optional<Utente> result=Optional.empty();
-        try(Connection connection = DatabaseManager.getConnection(); 
-            Statement cmd = connection.createStatement(); 
-                ResultSet rs = cmd.executeQuery("SELECT * FROM UTENTI WHERE ID_UTENTE = " + id);) {
-                    Utente utente=null;
-                    if(rs.next()) {
-                        utente = getUtente(rs);
-                    }
+        Optional<Utente> result = Optional.empty();
+        String sql = "SELECT * FROM UTENTE WHERE id_utente = ?";
+        try (Connection connection = DatabaseManager.getConnection(); 
+            PreparedStatement cmd = connection.prepareStatement(sql)) {
+            cmd.setLong(1, id);
+
+            try (ResultSet rs = cmd.executeQuery()) {
+                if (rs.next()) {
+                    Utente utente = getUtente(rs);
                     result = Optional.ofNullable(utente);
-        } catch(SQLException exc) {
-            throw new DBException("UtenteDAO.selectByID", exc);
+                }
+            }
+        } catch (SQLException exc) {
+            throw new DBException("Errore durante la select by Id (Utente)", exc);
         }   
         return result;
-    }
+}
 
     @Override
     public List<Utente> selectAll() {
         List<Utente> utenti = new ArrayList<>();
-        try(Connection connection = DatabaseManager.getConnection(); 
-            Statement cmd = connection.createStatement(); 
-                ResultSet rs = cmd.executeQuery("SELECT * FROM UTENTI");) {
-                    Utente utente=null;
-                    while(rs.next()) {
-                        utente = getUtente(rs);
-                        utenti.add(utente);
-                    }
-        } catch(SQLException exc) {
-            throw new DBException("UtenteDAO.selectAll", exc);
-        }   
-        return utenti;
+        String sql ="SELECT * FROM UTENTE";
+        
+        try(Connection connection = DatabaseManager.getConnection();
+            Statement cmd = connection.createStatement();
+            ResultSet rs = cmd.executeQuery(sql)){
+                Utente utente=null;
+                while(rs.next()){
+                    utente= getUtente(rs);
+                    utenti.add(utente);
+                }
+            
+        } catch (SQLException e){
+            throw new DBException("Errore durante la selectAll (Utente)", e);
+        }
+        return utenti;    
     }
 
     @Override
     public void insert(Utente u) {
         try(Connection connection = DatabaseManager.getConnection(); 
-            PreparedStatement cmd = connection.prepareStatement("INSERT INTO ALBUM VALUES (?,?,?)"); ) {
+            PreparedStatement cmd = connection.prepareStatement("INSERT INTO UTENTE(username, password, ruolo) VALUES (?,?,?)"); ) {
             cmd.setString(1, u.getUsername());
             cmd.setString(2, u.getPassword());
             cmd.setString(3, u.getRuolo());
             cmd.executeUpdate();
+            
+            System.out.println("Utente inserito con successo.");
+            
         } catch(SQLException exc) {
-            throw new DBException("UtenteDAO.insert", exc);
+            throw new DBException("Errore durante la insert (Utente)", exc);
         }   
     }
 
@@ -71,16 +81,17 @@ public class UtenteDAO implements DAO<Utente> {
     public void update(Utente u) {
         
         try (Connection connection = DatabaseManager.getConnection();
-            PreparedStatement cmd = connection.prepareStatement("UPDATE UTENTI SET username = ?, password = ?, ruolo = ? WHERE id_utente = ?")) {
+            PreparedStatement cmd = connection.prepareStatement("UPDATE UTENTE SET username = ?, password = ?, ruolo = ? WHERE id_utente = ?")) {
             cmd.setString(1, u.getUsername());
             cmd.setString(2, u.getPassword());
             cmd.setString(3, u.getRuolo());
             cmd.setLong(4, u.getIdUtente()); 
 
             cmd.executeUpdate();
+            System.out.println("Utente aggiornato con successo.");
 
         } catch (SQLException exc) {
-            throw new DBException("UtenteDAO.update", exc);
+            throw new DBException("Errore durante la update (Utente)", exc);
         }
     }
     
@@ -88,22 +99,23 @@ public class UtenteDAO implements DAO<Utente> {
     public void delete(Utente u) {
 
         try (Connection connection = DatabaseManager.getConnection();
-            PreparedStatement cmd = connection.prepareStatement("DELETE FROM UTENTI WHERE id_utente = ?")) {
+            PreparedStatement cmd = connection.prepareStatement("DELETE FROM UTENTE WHERE id_utente = ?")) {
 
             cmd.setLong(1, u.getIdUtente());
             cmd.executeUpdate();
 
         } catch (SQLException exc) {
-            throw new DBException("UtenteDAO.delete", exc);
+            throw new DBException("Errore durante la delete (Utente)", exc);
         }
     }
     
     public Utente getUtente(ResultSet rs) throws SQLException {
+        long id = rs.getLong("id_utente");
         String username = rs.getString("username");
         String password = rs.getString("password");
         String ruolo = rs.getString("ruolo"); 
         
-        return new Utente(username, password, ruolo);
+        return new Utente(id, username, password, ruolo);
     }
     
 }

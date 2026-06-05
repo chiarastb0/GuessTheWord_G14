@@ -9,7 +9,7 @@ package guesstheword_server.model;
  * @author angel
  */
 public class Utente {
-    private int idUtente;
+    private long idUtente;
     private String username;
     private String password;
     private String ruolo;
@@ -20,14 +20,14 @@ public class Utente {
         this.ruolo=ruolo;
     }
     
-    public Utente(int idUtente, String username, String password, String ruolo) {
+    public Utente(long idUtente, String username, String password, String ruolo) {
         this.idUtente=idUtente;
         this.username=username;
         this.password=password;
         this.ruolo=ruolo;
     }
 
-    public int getIdUtente() {
+    public long getIdUtente() {
         return idUtente;
     }
 
@@ -43,7 +43,7 @@ public class Utente {
         return ruolo;
     }
 
-    public void setIdUtente(int idUtente) {
+    public void setIdUtente(long idUtente) {
         this.idUtente = idUtente;
     }
 
