@@ -23,5 +23,6 @@ import javafx.application.Platform;
  */
 public class ClientConnection {
 
-    private int DaImplementare;
+    private int DaImplementare2;
+    private int nonloso;
 }
