@@ -3,7 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package guesstheword_server.model;
-
+import guesstheword_server.db.*;
+import guesstheword_server.db.UtenteDAO;
+import java.sql.*;
+import java.util.*;
 /**
  *
  * @author angel

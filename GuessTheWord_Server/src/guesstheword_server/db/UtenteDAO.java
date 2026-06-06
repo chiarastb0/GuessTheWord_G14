@@ -5,15 +5,8 @@
  */
 package guesstheword_server.db;
 import guesstheword_server.model.Utente;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.sql.*;
+import java.util.*;
 
 /**
  *
@@ -118,4 +111,23 @@ public class UtenteDAO implements DAO<Utente> {
         return new Utente(id, username, password, ruolo);
     }
     
+        public Optional<Utente> login(String username, String password) {
+        String sql = "SELECT * FROM UTENTE WHERE username = ? AND password = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+            PreparedStatement cmd = connection.prepareStatement(sql)) {
+        
+            cmd.setString(1, username);
+            cmd.setString(2, password);
+        
+            try (ResultSet rs = cmd.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(getUtente(rs));
+                }
+            }
+        } catch (SQLException exc) {
+            throw new DBException("Errore nel login", exc);
+        }
+        return Optional.empty();
+    }
+        
 }

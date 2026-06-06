@@ -6,6 +6,7 @@
 package guesstheword_server;
 
 import guesstheword_server.db.DatabaseManager;
+import guesstheword_server.network.*;
 import java.sql.Connection;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -33,7 +34,9 @@ public class GuessTheWord_Server extends Application {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        launch(args);     
+        launch(args);   
+        ServerManager server = new ServerManager();
+        server.start();
     }
     
 }
