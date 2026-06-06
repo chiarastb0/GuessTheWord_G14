@@ -76,7 +76,7 @@ public class ServerManager {
         
         // NOTA PER I PASSI SUCCESSIVI (Collaborazione con il Compagno 3):
         // Qui si invocherà il codice per estrarre l'estratto di testo,
-        // applicherai il Cifrario di Cesare (tuo compito) e distribuirai il testo cifrato ai client.
+        // applicherai il Cifrario di Cesare e distribuirai il testo cifrato ai client.
     }
     
     /**
