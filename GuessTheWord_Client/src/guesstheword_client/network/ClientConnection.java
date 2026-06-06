@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package guesstheword_client.controller;
+package guesstheword_client.network;
 
 /**
  *
  * @author admin
  */
-public class GameScreenController {
+public class ClientConnection {
     
 }
