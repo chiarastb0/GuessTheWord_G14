@@ -23,4 +23,5 @@ import javafx.application.Platform;
  */
 public class ClientConnection {
 
+    private int DaImplementare;
 }
