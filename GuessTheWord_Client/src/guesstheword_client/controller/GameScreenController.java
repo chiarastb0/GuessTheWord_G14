@@ -10,5 +10,5 @@ package guesstheword_client.controller;
  * @author admin
  */
 public class GameScreenController {
-    
+    private int DaImplementare;
 }

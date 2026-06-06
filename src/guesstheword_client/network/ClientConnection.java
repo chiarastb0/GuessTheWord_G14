@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package guessstheword_client.network;
+package guesstheword_client.network;
 
 /**
  *
@@ -23,6 +23,5 @@ import javafx.application.Platform;
  */
 public class ClientConnection {
 
-    private int DaImplementare2;
-    private int nonloso;
+
 }
