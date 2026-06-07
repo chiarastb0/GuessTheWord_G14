@@ -7,7 +7,7 @@ package guesstheword_server.utils;
 
 /**
  *
- * @author admin
+ * @author Chiara
  */
 public class CifrarioUtils {
      //Applica il Cifrario di Cesare a una stringa.

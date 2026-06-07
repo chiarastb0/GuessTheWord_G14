@@ -40,6 +40,8 @@ public class ServerManager {
                 // permettendo a questo ciclo di tornare istantaneamente su serverSocket.accept()
                 Thread t = new Thread(handler);
                 t.start();
+                giocatoriPronti.add(handler); 
+                avviaSfida();
             }
             
         } catch (IOException e) {
@@ -69,14 +71,23 @@ public class ServerManager {
     private void avviaSfida() {
         System.out.println("[SERVER] Entrambi i giocatori sono pronti! Avvio della sfida in tempo reale..."); 
         
-        // Comunica a entrambi i client l'inizio imminente del gioco
-        for (ClientHandler giocatore : giocatoriPronti) {
-            giocatore.inviaMessaggio("START_GAME: La partita sta per iniziare!"); 
-        }
-        
         // NOTA PER I PASSI SUCCESSIVI (Collaborazione con il Compagno 3):
         // Qui si invocherà il codice per estrarre l'estratto di testo,
         // applicherai il Cifrario di Cesare e distribuirai il testo cifrato ai client.
+        
+        // 1. Definiamo i dati della sfida (Per ora statici, poi integrati con il Compagno 2)
+        int durataTimer = 60; // Il tempo iniziale che passeremo al tuo Client per far partire la Timeline
+        String testoCifratoFittizio = "Il _ _ _ _ _ è sul tavolo."; // Parola cifrata/nascosta (es. gatto)
+
+        // 2. Prepariamo il messaggio seguendo il protocollo: START_GAME:tempo:testo
+        String messaggioInizio = "START_GAME:" + durataTimer + ":" + testoCifratoFittizio;
+
+        // 3. Comunica a entrambi i client l'inizio del gioco inviando la stringa formattata
+        for (ClientHandler giocatore : giocatoriPronti) {
+            giocatore.inviaMessaggio(messaggioInizio); 
+        }
+        
+        System.out.println("[SERVER] Dati di gioco inviati con successo ai partecipanti.");
     }
     
     /**
