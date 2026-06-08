@@ -10,6 +10,8 @@ import guesstheword_server.model.Utente;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Optional;
@@ -22,8 +24,8 @@ public class ClientHandler implements Runnable {
     private final ServerManager serverManager;
     
     // Canali per leggere e scrivere sulla rete
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     
     private boolean inAscolto = true;
     private String usernameUtente = null; 
@@ -39,19 +41,23 @@ public class ClientHandler implements Runnable {
     public void run() {
         try {
             // Inizializziamo i flussi di Input (ascolto) e Output (invio)
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true); // 'true' forza l'invio immediato senza buffer (autoflush)
-
-            String rigaRicevuta;
+            out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();    //forza l'invio immediato senza buffer (autoflush)
+            in = new ObjectInputStream(socket.getInputStream());
+            
+            Object objRicevuto;
             // Il thread resta confinato in questo ciclo leggendo ogni stringa inviata dal client
-            while (inAscolto && (rigaRicevuta = in.readLine()) != null) {
-                System.out.println("[CLIENT " + socket.getRemoteSocketAddress() + "] ha inviato: " + rigaRicevuta);
+            while (inAscolto && (objRicevuto = in.readObject()) != null) {
+                if (objRicevuto instanceof String) {
+                    String rigaRicevuta = (String) objRicevuto;
+                    System.out.println("[CLIENT " + socket.getRemoteSocketAddress() + "] ha inviato: " + rigaRicevuta);
                 
                 // Analizza ed esegue il comando ricevuto secondo il protocollo stabilito
                 elaboraMessaggio(rigaRicevuta);
+                }
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("[CLIENT HANDLER] Connessione interrotta con il client: " + e.getMessage());
         } finally {
             // Se il ciclo si interrompe (es. disconnessione o logout), puliamo le risorse
@@ -127,8 +133,24 @@ public class ClientHandler implements Runnable {
 
 
     public void inviaMessaggio(String messaggio) {
-        if (out != null) {
-            out.println(messaggio);
+        try {
+            if (out != null) {
+                out.writeObject(messaggio);
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.err.println("Errore invio stringa: " + e.getMessage());
+        }
+    }
+
+    public void inviaOggetto(Object obj) {
+        try {
+            if (out != null) {
+                out.writeObject(obj);
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.err.println("Errore invio oggetto: " + e.getMessage());
         }
     }
 

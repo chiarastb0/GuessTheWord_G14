@@ -114,6 +114,24 @@ public class PartitaDAO implements DAO<Partita> {
         return new Partita(idPartita, dataOra, parolaNascosta);
     }
     
+    // Calcola il numero totale di partite disputate sul server (Per Schermata Admin)
+    public int getNumeroPartiteDisputate() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM PARTITA";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stm = conn.createStatement();
+             ResultSet rs = stm.executeQuery(sql)) {
+
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            throw new DBException("Errore conteggio partite disputate", e);
+        }
+        return count;
+    }
     
     
 }

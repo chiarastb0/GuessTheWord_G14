@@ -143,4 +143,26 @@ public class RisultatoDAO implements DAO<Risultato>{
         return new Risultato(idRisultato, idPartita, idUtente, esito, tempoRispostaMs);
     }
     
+    // Calcola il tempo medio di risposta per un singolo giocatore
+    public double getTempoMedioRisposta(long idUtente) {
+        double media = 0;
+        String sql = "SELECT AVG(tempo_risposta_ms) FROM RISULTATO WHERE id_utente = ?";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, idUtente);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    media = rs.getDouble(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DBException("Errore calcolo tempo medio", e);
+        }
+        return media;
+    }
+    
 }

@@ -6,6 +6,7 @@
 package guesstheword_server.network;
 
 import guesstheword_server.ConfigManager;
+import guesstheword_server.model.PacchettoSfida;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
@@ -81,13 +82,14 @@ public class ServerManager {
 
         // 2. Prepariamo il messaggio seguendo il protocollo: START_GAME:tempo:testo
         String messaggioInizio = "START_GAME:" + durataTimer + ":" + testoCifratoFittizio;
+        PacchettoSfida pacchetto = new PacchettoSfida(testoCifratoFittizio, durataTimer);
 
-        // 3. Comunica a entrambi i client l'inizio del gioco inviando la stringa formattata
+        // 3. Comunica a entrambi i client l'inizio del gioco inviando l'ogetto
         for (ClientHandler giocatore : giocatoriPronti) {
-            giocatore.inviaMessaggio(messaggioInizio); 
+            giocatore.inviaOggetto(pacchetto); 
         }
         
-        System.out.println("[SERVER] Dati di gioco inviati con successo ai partecipanti.");
+        System.out.println("[SERVER] Pacchetto dati di gioco serializzato e inviato con successo.");
     }
     
     /**
