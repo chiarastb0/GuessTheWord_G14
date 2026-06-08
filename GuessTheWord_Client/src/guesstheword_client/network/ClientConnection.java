@@ -10,10 +10,13 @@ package guesstheword_client.network;
  * @author admin
  */
 
-import guesstheword_client.controller.ScreenGameController; 
+import guesstheword_client.controller.ScreenGameController;
+import guesstheword_server.model.PacchettoSfida;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import javafx.application.Platform;
@@ -28,8 +31,8 @@ public class ClientConnection implements Runnable {
     private Socket socket;
     
     // Canali per comunicare con il Server
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     
     private boolean inAscolto = true;
 
@@ -48,8 +51,9 @@ public class ClientConnection implements Runnable {
     public boolean connetti() {
         try {
             this.socket = new Socket(ip, porta);
-            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.out = new ObjectOutputStream(socket.getOutputStream());
+            this.out.flush();
+            this.in = new ObjectInputStream(socket.getInputStream());
             System.out.println("[CLIENT] Connesso al server " + ip + ":" + porta);
             return true;
         } catch (IOException e) {
@@ -64,16 +68,31 @@ public class ClientConnection implements Runnable {
     @Override
     public void run() {
         try {
-            String rigaRicevuta;
-            // Resta in attesa sul tubo di Input
-            while (inAscolto && (rigaRicevuta = in.readLine()) != null) {
-                System.out.println("[SERVER DICE]: " + rigaRicevuta);
-                elaboraMessaggioServer(rigaRicevuta);
+            Object objRicevuto;
+            while (inAscolto && (objRicevuto = in.readObject()) != null) {
+                
+                // CASO 1: Vecchie Stringhe (Login, ecc.)
+                if (objRicevuto instanceof String) {
+                    String rigaRicevuta = (String) objRicevuto;
+                    System.out.println("[SERVER DICE]: " + rigaRicevuta);
+                    elaboraMessaggioServer(rigaRicevuta); 
+                }
+                
+                // CASO 2:Serializzazione 
+                else if (objRicevuto instanceof PacchettoSfida) {
+                    PacchettoSfida pacchetto = (PacchettoSfida) objRicevuto;
+                    
+                    if (controllerGioco != null) {
+                        Platform.runLater(() -> {
+                            controllerGioco.inizializzaPartita(String.valueOf(pacchetto.getDurataTimerSecondi()), pacchetto.getParolaCifrata());
+                        });
+                    }
+                }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("[CLIENT] Connessione con il server interrotta: " + e.getMessage());
         } finally {
-            chiudiConnessione();
+            chiudiConnessione(); // Chiama intatto il metodo del tuo compagno
         }
     }
 
@@ -120,8 +139,13 @@ public class ClientConnection implements Runnable {
      * Invia un messaggio testuale (comando) al ClientHandler del Server.
      */
     public void spedisciMessaggio(String messaggio) {
-        if (out != null) {
-            out.println(messaggio);
+        try {
+            if (out != null) {
+                out.writeObject(messaggio);
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.err.println("Errore spedizione messaggio client: " + e.getMessage());
         }
     }
 
