@@ -12,6 +12,12 @@
             <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/network/ClientHandler.java</file>
             <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/db/UtenteDAO.java</file>
             <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/network/ServerManager.java</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/db/DatabaseManager.java</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/utils/CifrarioUtils.java</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/utils/FileManager.java</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/model/Partita.java</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/testo_prova.txt</file>
+            <file>file:/C:/Users/angel/Documents/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/model/PacchettoSfida.java</file>
         </group>
     </open-files>
 </project-private>

@@ -16,6 +16,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javafx.concurrent.Task;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 
 public class FileManager {
 
@@ -42,5 +47,24 @@ public class FileManager {
                         .collect(Collectors.groupingBy(parola -> parola, Collectors.counting()));
             }
         };
+    }
+    
+    /**
+    * Salva la mappa delle parole analizzate in un file binario locale.
+    */
+    public static void salvaDizionario(Map<String, Long> dizionario, String percorsoSalvataggio) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(percorsoSalvataggio))) {
+            oos.writeObject(dizionario);
+        }
+    }    
+    
+    /**
+    * Carica la mappa delle parole precedentemente salvata sul disco.
+    */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Long> caricaDizionario(String percorsoSalvataggio) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(percorsoSalvataggio))) {
+            return (Map<String, Long>) ois.readObject();
+        }
     }
 }
