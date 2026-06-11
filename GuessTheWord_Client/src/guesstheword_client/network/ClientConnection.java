@@ -121,12 +121,15 @@ public class ClientConnection implements Runnable {
             case "LOGIN_SUCCESS":
                 System.out.println("[LOGIN] Accesso eseguito con successo.");
                 
+                String[] pezzi = messaggio.split(":");
+                final String ruolo = (pezzi.length >= 2) ? pezzi[1].trim() : "PLAYER";
+                
                 if (controllerAuth != null) {
                     Platform.runLater(() -> {
-                        controllerAuth.mostraMessaggioErroreLogin("✅ Accesso riuscito!");
+                        controllerAuth.mostraMessaggioErroreLogin("✅Accesso riuscito!");
                         // Nota: qui potrai inserire la logica del cambio di scena
                         // verso l'interfaccia di gioco effettiva
-                        controllerAuth.gestisciLoginSuccess(this);
+                        controllerAuth.gestisciLoginSuccess(this, ruolo);
                     });
                 }
                 break;

@@ -14,7 +14,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -33,17 +32,15 @@ public class AuthController implements Initializable {
     @FXML private VBox paneRegistrazione;
     @FXML private TextField txtRegUser;
     @FXML private PasswordField txtRegPass;
-    @FXML private ComboBox<String> comboRuolo;
+    @FXML private Label comboRuolo;
     @FXML private Label lblErroreReg;
 
     private ClientConnection clientConnection;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Popoliamo la combo box con i ruoli richiesti dal bando d'esame
-        comboRuolo.getItems().addAll("PLAYER", "ADMIN");
-        comboRuolo.setValue("PLAYER"); // Valore di default
-    }    
+           // Lascia vuoto: il testo "PLAYER" è già impostato nel file FXML
+    }
     
     public void setClientConnection(ClientConnection connessione) {
         this.clientConnection = connessione;
@@ -89,9 +86,9 @@ public class AuthController implements Initializable {
     void gestisciRegistrazione(ActionEvent event) {
         String user = txtRegUser.getText().trim();
         String pass = txtRegPass.getText().trim();
-        String ruolo = comboRuolo.getValue();
+        String ruolo = comboRuolo.getText().trim();
 
-        if (user.isEmpty() || pass.isEmpty() || ruolo == null) {
+        if (user.isEmpty() || pass.isEmpty() || ruolo.isEmpty()) {// 
             lblErroreReg.setText("⚠️ Compila tutti i campi!");
             return;
         }
@@ -111,8 +108,15 @@ public class AuthController implements Initializable {
         }
     }
     
-    public void gestisciLoginSuccess(ClientConnection connessione) {
+    public void gestisciLoginSuccess(ClientConnection connessione, String ruolo) {
     try {
+
+            // Se l'utente è un ADMIN, blocchiamo l'accesso!
+            if (ruolo.equals("ADMIN")) {
+                mostraMessaggioErroreLogin("❌ Accesso negato: l'acesso è riservato ai Player.");
+                return; // Interrompe il metodo ed evita il cambio di scena
+            }
+        
         // 1. Carica il file FXML della schermata di gioco
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/ScreenGameView.fxml"));
             Parent giocoRoot = loader.load();
