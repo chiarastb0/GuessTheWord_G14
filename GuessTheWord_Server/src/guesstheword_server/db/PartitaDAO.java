@@ -71,6 +71,32 @@ public class PartitaDAO implements DAO<Partita> {
             throw new DBException("Errore durante la insert (Partita)", e);
         }
     }
+    
+    // Nuovo metodo per salvare e farsi restituire l'ID generato dal Database
+    public long inserisciERestituisciId(Partita t) {
+        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta) VALUES (?,?)";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+             // RIMOSSO Statement.RETURN_GENERATED_KEYS: SQLite lo gestisce in automatico!
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+            
+            pst.setString(1, t.getDataOra());
+            pst.setString(2, t.getParolaNascosta());
+            pst.executeUpdate();
+            
+            // Possiamo chiamare getGeneratedKeys() direttamente dopo l'esecuzione
+            try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1); 
+                }
+            }
+        } catch (SQLException e) {
+            // Stampiamo il vero messaggio di errore di SQLite per facilitare il debug
+            System.err.println("[ERRORE SQLITE DETTAGLIATO]: " + e.getMessage());
+            throw new DBException("Errore durante la insert con ID (Partita)", e);
+        }
+        return -1; 
+    }
 
     @Override
     public void update(Partita t) {

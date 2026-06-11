@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
     
     private boolean inAscolto = true;
     private String usernameUtente = null; 
+    private long idUtente = -1;
     private final UtenteDAO utenteDAO;
 
     public ClientHandler(Socket socket, ServerManager serverManager) {
@@ -149,7 +150,7 @@ public class ClientHandler implements Runnable {
         if (utenteAutenticato.isPresent()) {
             Utente u = utenteAutenticato.get();
             this.usernameUtente = u.getUsername();
-            
+            this.idUtente = u.getIdUtente();
             // Inviamo la risposta di successo includendo Ruolo e Username
             inviaMessaggio("LOGIN_SUCCESS:" + u.getRuolo() + ":" + u.getUsername());
             
@@ -225,4 +226,6 @@ public class ClientHandler implements Runnable {
             System.err.println("[CLIENT HANDLER] Errore chiusura socket stream: " + e.getMessage());
         }
     }
+    
+    public long getIdUtente() { return this.idUtente; }
 }

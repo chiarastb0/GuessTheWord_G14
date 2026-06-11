@@ -26,6 +26,8 @@ public class ServerManager {
     //VARIABILI PER GESTIRE STATO PARTITA
     private boolean partitaInCorso = false;
     private Timer timerPartita;
+    
+    private long timestampInizioSfida;
 
     // Riceve sia la mappa che il testo integrale dall'interfaccia Admin
     public void setDatiSfida(Map<String, Long> dizionario, String testoIntegrale) {
@@ -64,15 +66,19 @@ public class ServerManager {
     }
     
     public synchronized void giocatoreAutenticato(ClientHandler handler) {
-        if (giocatoriPronti.size() < 2) {
+        if (!giocatoriPronti.contains(handler)) {
             giocatoriPronti.add(handler);
-            System.out.println("[MATCHMAKING] Giocatore '" + handler.getUsernameUtente() + "' pronto! (" + giocatoriPronti.size() + "/2)");
+            System.out.println("[SERVER] Giocatore pronto: " + handler.getUsernameUtente() + " (" + giocatoriPronti.size() + "/2)");
             
+            // Appena ci sono 2 giocatori, la sfida parte, MA con un ritardo di 1 secondo!
             if (giocatoriPronti.size() == 2) {
-                avviaSfida();
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000); // Pausa di 1 secondo
+                    } catch (InterruptedException e) { }
+                    avviaSfida();
+                }).start();
             }
-        } else {
-            handler.inviaMessaggio("ERRORE: Partita già in corso. Riprova più tardi.");
         }
     }
     
@@ -102,7 +108,8 @@ public class ServerManager {
         
         int durataTimer = 60; 
         this.partitaInCorso = true; // Dichiariamo la partita ufficialmente aperta!
-
+        this.timestampInizioSfida = System.currentTimeMillis();
+        
         // Creiamo il timer del Server: se scade senza vincitori, chiama il Pareggio
         if (timerPartita != null) timerPartita.cancel();
         timerPartita = new Timer();
@@ -166,6 +173,7 @@ public class ServerManager {
                 giocatore.inviaMessaggio("FINE_PARTITA:SCONFITTA:Il giocatore " + vincitore.getUsernameUtente() + " ha indovinato: " + parolaSegretaCorrente);
             }
         }
+        salvaDatiNelDatabase(vincitore);
         resetPartita();
     }
 
@@ -181,6 +189,7 @@ public class ServerManager {
         for (ClientHandler giocatore : giocatoriPronti) {
             giocatore.inviaMessaggio("FINE_PARTITA:PAREGGIO:Tempo scaduto! La parola era: " + parolaSegretaCorrente);
         }
+        salvaDatiNelDatabase(null);
         resetPartita();
     }
 
@@ -192,4 +201,55 @@ public class ServerManager {
         giocatoriPronti.clear();
         System.out.println("[SERVER] Campo da gioco resettato. In attesa di nuove sfide...");
     }
+    
+    /**
+  * Salva la partita e i due risultati nel Database
+  */
+ private void salvaDatiNelDatabase(ClientHandler vincitore) {
+     try {
+         guesstheword_server.db.PartitaDAO partitaDAO = new guesstheword_server.db.PartitaDAO();
+         guesstheword_server.db.RisultatoDAO risultatoDAO = new guesstheword_server.db.RisultatoDAO();
+
+         // 1. Genera la Partita
+         String dataOra = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+         guesstheword_server.model.Partita nuovaPartita = new guesstheword_server.model.Partita(dataOra, this.parolaSegretaCorrente);
+
+         long idPartita = partitaDAO.inserisciERestituisciId(nuovaPartita);
+         if (idPartita == -1) {
+             System.err.println("[DB ERRORE] Impossibile recuperare l'ID della partita.");
+             return;
+         }
+
+         // 2. Calcola i millisecondi (se pareggio, mettiamo 60000ms, ovvero i 60s totali)
+         int tempoRispostaMs = (vincitore != null) ? (int)(System.currentTimeMillis() - timestampInizioSfida) : 60000;
+
+         // 3. Salva i due Risultati
+         for (ClientHandler giocatore : giocatoriPronti) {
+                String esito = "PAREGGIO";
+                int tempoGiocatore = 60000; // Tempo di default (60s) per chi perde o pareggia
+
+                if (vincitore != null) {
+                    if (giocatore == vincitore) {
+                        esito = "VITTORIA";
+                        // Il calcolo reale del tempo si fa SOLO per il vincitore!
+                        tempoGiocatore = (int)(System.currentTimeMillis() - timestampInizioSfida); 
+                    } else {
+                        esito = "SCONFITTA";
+                    }
+                }
+
+                guesstheword_server.model.Risultato r = new guesstheword_server.model.Risultato(
+                    idPartita,
+                    giocatore.getIdUtente(),
+                    esito,
+                    tempoGiocatore
+                );
+                risultatoDAO.insert(r);
+            }
+         System.out.println("[SERVER DB] Partita e risultati salvati con successo su Database!");
+
+     } catch (Exception e) {
+         System.err.println("[SERVER DB] Errore nel salvataggio su database: " + e.getMessage());
+     }
+ }
 }
