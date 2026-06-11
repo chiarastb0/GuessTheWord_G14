@@ -20,7 +20,7 @@ public class GuessTheWord_Client extends Application {
         ScreenGameController controller = loader.getController();
         
         // Fa partire la connessione di rete verso il server (es. localhost, porta 1234)
-        ClientConnection connessione = new ClientConnection("127.0.0.1", 1234);
+        ClientConnection connessione = new ClientConnection("127.0.0.1", 8080);
         
         if (connessione.connetti()) {
             // Collega la rete al controller
