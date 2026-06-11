@@ -4,11 +4,6 @@
  */
 package guesstheword_server.controller;
 
-/**
- *
- * @author angel
- */
-
 import guesstheword_server.db.PartitaDAO;
 import guesstheword_server.network.ServerManager;
 import guesstheword_server.utils.FileManager;
@@ -28,7 +23,6 @@ import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.control.ComboBox;
-import java.io.File;
 
 public class AdminDashboardController {
 
@@ -42,16 +36,12 @@ public class AdminDashboardController {
     @FXML private TableColumn<Map.Entry<String, Long>, Long> colonnaFrequenza;
     @FXML private ComboBox<String> comboStoricoFile;
     
-    // La cartella dove salveremo tutti i file binari generati
     private final File cartellaStorico = new File("storico_dizionari");
-    // Teniamo traccia dell'ultimo file selezionato per il salvataggio
     private File ultimoFileCaricato;
-
     private ServerManager serverManager;
     
-    // Tiene in memoria il testo completo per passarlo al server all'avvio
-    private String testoIntegraleCorrente = "";
-    
+    // Variabile aggiunta per tenere in memoria il testo completo e passarlo al Server!
+    private String testoIntegraleCorrente = ""; 
 
     @FXML
     public void initialize() {
@@ -63,7 +53,6 @@ public class AdminDashboardController {
             cartellaStorico.mkdir();
         }
         
-        // Ripristina l'ultima sessione caricando mappa e testo completo
         File[] salvataggi = cartellaStorico.listFiles((dir, name) -> name.endsWith(".dat"));
         if (salvataggi != null && salvataggi.length > 0) {
             try {
@@ -71,7 +60,7 @@ public class AdminDashboardController {
                 Map<String, Long> mappa = (Map<String, Long>) dati[0];
                 String testo = (String) dati[1];
                 
-                this.testoIntegraleCorrente = testo;
+                this.testoIntegraleCorrente = testo; // Salviamo il testo in memoria
                 
                 tabellaParole.getItems().addAll(mappa.entrySet());
                 lblNomeFile.setText("Ripristinato: " + salvataggi[0].getName().replace(".dat", ""));
@@ -86,24 +75,17 @@ public class AdminDashboardController {
         aggiornaTendinaStorico();
     }
     
-    /**
-     * Legge la cartella dello storico e inserisce i nomi nella tendina
-     */
     private void aggiornaTendinaStorico() {
         comboStoricoFile.getItems().clear();
         File[] salvataggi = cartellaStorico.listFiles((dir, name) -> name.endsWith(".dat"));
         
         if (salvataggi != null) {
             for (File f : salvataggi) {
-                // Rimuove l'estensione .dat per rendere la scritta più pulita nella tendina
                 comboStoricoFile.getItems().add(f.getName().replace(".dat", ""));
             }
         }
     }
 
-    /**
-     * Scatta automaticamente quando l'amministratore seleziona una voce dalla tendina
-     */
     @FXML
     void caricaDaStorico(ActionEvent event) {
         String nomeSelezionato = comboStoricoFile.getValue();
@@ -114,8 +96,8 @@ public class AdminDashboardController {
                 Map<String, Long> dizionarioCaricato = (Map<String, Long>) dati[0];
                 String testoIntegrale = (String) dati[1];
                 
-                this.testoIntegraleCorrente = testoIntegrale;
-                        
+                this.testoIntegraleCorrente = testoIntegrale; // Salviamo il testo in memoria
+                
                 tabellaParole.getItems().clear();
                 tabellaParole.getItems().addAll(dizionarioCaricato.entrySet());
                 
@@ -146,26 +128,24 @@ public class AdminDashboardController {
         if (serverManager == null) {
             serverManager = new ServerManager();
             
-            // SE C'È GIÀ UN DIZIONARIO CARICATO NELLA TABELLA ALL'AVVIO, PASSALO AL SERVER
             if (!tabellaParole.getItems().isEmpty()) {
                 java.util.Map<String, Long> mappaCorrente = new java.util.HashMap<>();
                 for (java.util.Map.Entry<String, Long> entry : tabellaParole.getItems()) {
                     mappaCorrente.put(entry.getKey(), entry.getValue());
                 }
+                // Usiamo il metodo aggiornato con la firma corretta!
                 serverManager.setDatiSfida(mappaCorrente, testoIntegraleCorrente);
             }
             
-            // Avviamo il socket in un Thread separato per NON bloccare l'interfaccia JavaFX
             Thread serverThread = new Thread(() -> {
                 serverManager.start();
             });
-            serverThread.setDaemon(true); // Il thread si chiude se chiudi la finestra grafica
+            serverThread.setDaemon(true); 
             serverThread.start();
 
-            // Aggiorniamo la grafica
             lblServerStatus.setText("🟢 In Ascolto...");
             lblServerStatus.setTextFill(javafx.scene.paint.Color.GREEN);
-            btnStartServer.setDisable(true); // Evita di avviare due server contemporaneamente
+            btnStartServer.setDisable(true); 
         }
     }
 
@@ -175,12 +155,11 @@ public class AdminDashboardController {
         fileChooser.setTitle("Seleziona File di Testo per le Sfide");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
         
-        // Ricava la finestra attuale per mostrare il popup
         Stage stage = (Stage) btnStartServer.getScene().getWindow();
         File fileSelezionato = fileChooser.showOpenDialog(stage);
 
         if (fileSelezionato != null) {
-            this.ultimoFileCaricato = fileSelezionato; // Salviamo il riferimento
+            this.ultimoFileCaricato = fileSelezionato; 
             lblNomeFile.setText("Analisi in corso: " + fileSelezionato.getName());
             avviaAnalisiTestoAsincrona(fileSelezionato.getAbsolutePath());
         }
@@ -189,11 +168,9 @@ public class AdminDashboardController {
     private void avviaAnalisiTestoAsincrona(String percorso) {
         Task<Map<String, Long>> taskAnalisi = FileManager.analizzaDocumentoTask(percorso);
 
-        // Mostriamo e colleghiamo la barra di caricamento al progresso del Task
         progressBar.setVisible(true);
         progressBar.progressProperty().bind(taskAnalisi.progressProperty());
 
-        // Dopo che le Stream API finiscono di analizzare i dati
         taskAnalisi.setOnSucceeded(e -> {
             Map<String, Long> risultato = taskAnalisi.getValue();
             
@@ -205,12 +182,10 @@ public class AdminDashboardController {
                     String nomeBase = ultimoFileCaricato.getName().replace(".txt", "");
                     String percorsoSalvataggio = cartellaStorico.getPath() + "/" + nomeBase + ".dat";
                     
-                    // Leggiamo il testo integrale dal file .txt in input
                     String testoIntegrale = new String(java.nio.file.Files.readAllBytes(ultimoFileCaricato.toPath()), java.nio.charset.StandardCharsets.UTF_8);
                     
-                    this.testoIntegraleCorrente = testoIntegrale;
+                    this.testoIntegraleCorrente = testoIntegrale; // Salviamo il testo in memoria
                     
-                    // Salviamo la coppia mappa + testo integrale su disco nello storico
                     FileManager.salvaDizionarioETesto(risultato, testoIntegrale, percorsoSalvataggio);
                     
                     if (serverManager != null) {
@@ -239,7 +214,6 @@ public class AdminDashboardController {
             System.err.println("Errore FileManager: " + taskAnalisi.getException());
         });
 
-        // Lanciamo il task in background
         new Thread(taskAnalisi).start();
     }
 }

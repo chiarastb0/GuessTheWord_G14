@@ -45,7 +45,7 @@ public class ClientHandler implements Runnable {
             
             // --- INIZIO BYPASS PER IL TEST ---
             this.usernameUtente = "Tester_" + socket.getPort(); // Assegna un nome finto
-            serverManager.aggiungiGiocatorePronto(this);        // Usa il metodo col nome corretto!
+            serverManager.giocatoreAutenticato(this);        // Usa il metodo col nome corretto!
             // --- FINE BYPASS --
             
             // Il thread resta confinato in questo ciclo leggendo ogni stringa inviata dal client
@@ -128,7 +128,7 @@ public class ClientHandler implements Runnable {
             
             // Se è un normale giocatore ("PLAYER"), lo registriamo nel ServerManager per il matchmaking
             if (u.getRuolo().equalsIgnoreCase("PLAYER")) {
-                serverManager.aggiungiGiocatorePronto(this); // Nome del metodo corretto!
+                serverManager.giocatoreAutenticato(this); // Nome del metodo corretto!
             } else {
                 System.out.println("[SERVER] L'amministratore '" + usernameUtente + "' si è connesso.");
             }
