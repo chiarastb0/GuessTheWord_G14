@@ -7,15 +7,11 @@ package guesstheword_server.network;
 
 import guesstheword_server.db.UtenteDAO;
 import guesstheword_server.model.Utente;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Optional;
-
 
 // Gestisce la sessione di comunicazione con un singolo client su un thread separato.
 public class ClientHandler implements Runnable {
@@ -42,7 +38,7 @@ public class ClientHandler implements Runnable {
         try {
             // Inizializziamo i flussi di Input (ascolto) e Output (invio)
             out = new ObjectOutputStream(socket.getOutputStream());
-            out.flush();    //forza l'invio immediato senza buffer (autoflush)
+            out.flush();    // forza l'invio immediato senza buffer (autoflush)
             in = new ObjectInputStream(socket.getInputStream());
             
             Object objRicevuto;
@@ -52,8 +48,8 @@ public class ClientHandler implements Runnable {
                     String rigaRicevuta = (String) objRicevuto;
                     System.out.println("[CLIENT " + socket.getRemoteSocketAddress() + "] ha inviato: " + rigaRicevuta);
                 
-                // Analizza ed esegue il comando ricevuto secondo il protocollo stabilito
-                elaboraMessaggio(rigaRicevuta);
+                    // Analizza ed esegue il comando ricevuto secondo il protocollo stabilito
+                    elaboraMessaggio(rigaRicevuta);
                 }
             }
 
@@ -70,16 +66,19 @@ public class ClientHandler implements Runnable {
      * Gestisce i comandi separati dal carattere speciale ":" (Es. LOGIN:username:password)
      */
     private void elaboraMessaggio(String messaggio) {
-        String[] parti = messaggio.split(":");
+        // Usiamo un limite nello split per non rompere i messaggi contenenti ":"
+        String[] parti = messaggio.split(":", 2);
         if (parti.length == 0) return;
         
         String comando = parti[0].toUpperCase();
 
         switch (comando) {
             case "LOGIN":
-                if (parti.length == 3) {
-                    String user = parti[1];
-                    String pass = parti[2];
+                // Riespandiamo il resto dei parametri (user e pass)
+                String[] datiLogin = parti[1].split(":");
+                if (datiLogin.length == 2) {
+                    String user = datiLogin[0];
+                    String pass = datiLogin[1];
                     gestisciLogin(user, pass);
                 } else {
                     inviaMessaggio("LOGIN_FAIL: Formato comando non valido.");
@@ -87,12 +86,21 @@ public class ClientHandler implements Runnable {
                 break;
                 
             case "RISPOSTA":
-                // Questo comando servirà nella Fase 3/4 per ricevere i tentativi di gioco delle parole
                 if (parti.length == 2) {
                     String parolaTentata = parti[1];
                     System.out.println("[GIOCO] L'utente " + getUsernameUtente() + " ha tentato: " + parolaTentata);
                     // QUI in futuro vi collegherete al controllo vincitore del Compagno 3
                 }
+                break;
+
+            case "RICHIEDI_CLASSIFICA":
+                System.out.println("[RICHIESTA] L'utente " + getUsernameUtente() + " ha richiesto la classifica globale.");
+                gestisciRichiestaClassifica();
+                break;
+
+            case "RICHIEDI_STORICO":
+                System.out.println("[RICHIESTA] L'utente " + getUsernameUtente() + " ha richiesto il proprio storico partite.");
+                gestisciRichiestaStorico();
                 break;
 
             case "DISCONNECT":
@@ -109,14 +117,13 @@ public class ClientHandler implements Runnable {
      * Esegue la verifica delle credenziali interfacciandosi con l'UtenteDAO.
      */
     private void gestisciLogin(String user, String pass) {
-        // Usiamo il metodo di login del tuo UtenteDAO 
         Optional<Utente> utenteAutenticato = utenteDAO.login(user, pass);
 
         if (utenteAutenticato.isPresent()) {
             Utente u = utenteAutenticato.get();
             this.usernameUtente = u.getUsername();
             
-            // Inviamo la risposta di successo includendo Ruolo e Username (Requisito fondamentale del Bando!)
+            // Inviamo la risposta di successo includendo Ruolo e Username
             inviaMessaggio("LOGIN_SUCCESS:" + u.getRuolo() + ":" + u.getUsername());
             
             // Se è un normale giocatore ("PLAYER"), lo registriamo nel ServerManager per il matchmaking
@@ -126,11 +133,55 @@ public class ClientHandler implements Runnable {
                 System.out.println("[SERVER] L'amministratore '" + usernameUtente + "' si è connesso.");
             }
         } else {
-            
             inviaMessaggio("LOGIN_FAIL:Username o Password errati.");
         }
     }
 
+    /**
+     * Interroga il DB e restituisce la stringa formattata della classifica globale.
+     */
+    private void gestisciRichiestaClassifica() {
+        // Qui richiamiamo il metodo che il tuo compagno strutturerà nell'UtenteDAO o DatabaseManager.
+        // Deve restituire una stringa formattata così: "posizione,username,punti;posizione,username,punti;..."
+        // Esempio: "1,Chiara,500;2,Mario,350;3,Luigi,200"
+        
+        try {
+            // Nota: Se il compagno non ha ancora implementato il metodo, puoi usare questa stringa di test simulata:
+            // String datiClassifica = "1,Chiara,500;2,Mario,350;3,Luigi,200";
+            String datiClassifica = utenteDAO.getClassificaGlobaleFormattata(); 
+            
+            inviaMessaggio("DATI_CLASSIFICA:" + datiClassifica);
+        } catch (Exception e) {
+            System.err.println("[SERVER] Errore nel recupero della classifica: " + e.getMessage());
+            inviaMessaggio("ERRORE: Impossibile recuperare la classifica.");
+        }
+    }
+
+    /**
+     * Interroga il DB e restituisce la stringa formattata dello storico personale di questo specifico utente.
+     */
+    private void gestisciRichiestaStorico() {
+        // Se l'utente non è loggato non può chiedere lo storico
+        if (usernameUtente == null) {
+            inviaMessaggio("ERRORE: Devi prima effettuare il login.");
+            return;
+        }
+
+        try {
+            // Chiediamo al database lo storico dei match filtrato per l'utente corrente ("this.usernameUtente")
+            // Deve restituire una stringa formattata così: "data,parola,esito,punti;data,parola,esito,punti;..."
+            // Esempio: "2026-06-11,CASA,VINTO,100;2026-06-10,ALBERO,PERSO,0"
+            
+            // Nota di test simulata se il DB non è pronto:
+            // String datiStorico = "11/06/2026,PROGRAMMAZIONE,VINTO,150;10/06/2026,DATABASE,PERSO,0";
+            String datiStorico = utenteDAO.getStoricoPartiteFormattato(this.usernameUtente);
+            
+            inviaMessaggio("DATI_STORICO:" + datiStorico);
+        } catch (Exception e) {
+            System.err.println("[SERVER] Errore nel recupero dello storico per " + usernameUtente + ": " + e.getMessage());
+            inviaMessaggio("ERRORE: Impossibile recuperare lo storico partite.");
+        }
+    }
 
     public void inviaMessaggio(String messaggio) {
         try {

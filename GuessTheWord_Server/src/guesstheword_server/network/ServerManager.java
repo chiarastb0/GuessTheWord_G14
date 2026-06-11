@@ -25,7 +25,7 @@ public class ServerManager {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server avviato correttamente sulla porta: " + port);
            
-                while (inEsecuzione) {
+            while (inEsecuzione) {
                 // Il server si blocca qui in attesa di una chiamata dal Client
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Nuovo client connesso da: " + clientSocket.getRemoteSocketAddress());
@@ -37,12 +37,11 @@ public class ServerManager {
                     clientConnessi.add(handler);
                 }
                 
-                // Crea e fa partire il Thread indipendente. Il ClientHandler eseguirà il suo metodo run()
-                // permettendo a questo ciclo di tornare istantaneamente su serverSocket.accept()
+                // Crea e fa partire il Thread indipendente.
                 Thread t = new Thread(handler);
                 t.start();
-                giocatoriPronti.add(handler); 
-                avviaSfida();
+                
+                // CORRETTO: Rimosse le righe di forcing del test che lanciavano la sfida senza login!
             }
             
         } catch (IOException e) {
@@ -72,24 +71,23 @@ public class ServerManager {
     private void avviaSfida() {
         System.out.println("[SERVER] Entrambi i giocatori sono pronti! Avvio della sfida in tempo reale..."); 
         
-        // NOTA PER I PASSI SUCCESSIVI (Collaborazione con il Compagno 3):
-        // Qui si invocherà il codice per estrarre l'estratto di testo,
-        // applicherai il Cifrario di Cesare e distribuirai il testo cifrato ai client.
-        
         // 1. Definiamo i dati della sfida (Per ora statici, poi integrati con il Compagno 2)
-        int durataTimer = 60; // Il tempo iniziale che passeremo al tuo Client per far partire la Timeline
-        String testoCifratoFittizio = "Il _ _ _ _ _ è sul tavolo."; // Parola cifrata/nascosta (es. gatto)
+        int durataTimer = 60; 
+        String testoCifratoFittizio = "Il _ _ _ _ _ è sul tavolo."; 
 
-        // 2. Prepariamo il messaggio seguendo il protocollo: START_GAME:tempo:testo
-        String messaggioInizio = "START_GAME:" + durataTimer + ":" + testoCifratoFittizio;
+        // 2. Prepariamo l'oggetto serializzabile
         PacchettoSfida pacchetto = new PacchettoSfida(testoCifratoFittizio, durataTimer);
 
-        // 3. Comunica a entrambi i client l'inizio del gioco inviando l'ogetto
+        // 3. Comunica a entrambi i client l'inizio del gioco inviando l'oggetto
         for (ClientHandler giocatore : giocatoriPronti) {
             giocatore.inviaOggetto(pacchetto); 
         }
         
         System.out.println("[SERVER] Pacchetto dati di gioco serializzato e inviato con successo.");
+        
+        // CORRETTO: Resettiamo la lista dei giocatori pronti così il server è pronto 
+        // ad accogliere la prossima coppia di sfidanti senza conflitti!
+        giocatoriPronti.clear();
     }
     
     /**
