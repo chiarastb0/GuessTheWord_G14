@@ -149,4 +149,42 @@ public class ScreenGameController implements Initializable {
         PartitaStorico nuovaRiga = new PartitaStorico(data, parola, esito, punteggio);
         datiStorico.add(nuovaRiga);
     }
+    
+    /**
+     * Riceve il comando di fine partita dalla rete e mostra un Pop-up grafico
+     */
+    public void gestisciFinePartita(String messaggioRete) {
+        // Il messaggio è tipo "FINE_PARTITA:VITTORIA:Hai indovinato la parola..."
+        String[] parti = messaggioRete.split(":", 3); 
+        if (parti.length < 3) return;
+
+        String esito = parti[1]; // VITTORIA, SCONFITTA o PAREGGIO
+        String testoAvviso = parti[2]; // La spiegazione
+
+        // Platform.runLater forza l'aggiornamento sulla coda grafica di JavaFX
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setHeaderText("Partita Terminata!");
+            alert.setContentText(testoAvviso);
+
+            // Personalizziamo il titolo della finestrella in base all'esito
+            switch (esito) {
+                case "VITTORIA":
+                    alert.setTitle("🏆 Hai Vinto!");
+                    break;
+                case "SCONFITTA":
+                    alert.setTitle("❌ Hai Perso!");
+                    break;
+                case "PAREGGIO":
+                    alert.setTitle("⏱️ Pareggio!");
+                    break;
+            }
+
+            // Mostriamo il pop-up e aspettiamo che l'utente clicchi OK
+            alert.showAndWait();
+            
+            // (Opzionale) Qui puoi aggiungere codice per svuotare le caselle di testo
+            // o riportare l'utente alla schermata iniziale/dashboard
+        });
+    }
 }

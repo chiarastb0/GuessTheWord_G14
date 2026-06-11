@@ -129,6 +129,14 @@ public class ClientConnection implements Runnable {
                     });
                 }
                 break;
+            
+            case "FINE_PARTITA":
+                System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
+                if (controllerGioco != null) {
+                    // Passiamo l'intero messaggio al controller grafico
+                    controllerGioco.gestisciFinePartita(messaggio); 
+                }
+                break;
 
             case "DATI_CLASSIFICA":
                 // Formato atteso dal Server: DATI_CLASSIFICA:posizione,username,punti;posizione,username,punti;...
