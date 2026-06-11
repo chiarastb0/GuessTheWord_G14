@@ -11,7 +11,6 @@ import java.sql.*;
  * @author angel
  */
 public class DatabaseManager {
-    //Da Modificare aggiungendo lettura da file .properties
     private static Connection conn = null;
     
     public static Connection  getConnection() throws SQLException {

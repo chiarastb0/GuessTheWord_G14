@@ -47,6 +47,12 @@ public class ClientHandler implements Runnable {
             
             Object objRicevuto;
             // Il thread resta confinato in questo ciclo leggendo ogni stringa inviata dal client
+            
+            // --- INIZIO BYPASS PER IL TEST ---
+            this.usernameUtente = "Tester_" + socket.getPort(); // Assegna un nome finto
+            serverManager.giocatoreAutenticato(this);           // Lo dichiara "Pronto" per giocare
+            // --- FINE BYPASS --
+            
             while (inAscolto && (objRicevuto = in.readObject()) != null) {
                 if (objRicevuto instanceof String) {
                     String rigaRicevuta = (String) objRicevuto;

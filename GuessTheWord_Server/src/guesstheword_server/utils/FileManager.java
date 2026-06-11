@@ -50,21 +50,24 @@ public class FileManager {
     }
     
     /**
-    * Salva la mappa delle parole analizzate in un file binario locale.
+    * Salva sia la mappa delle frequenze che il testo integrale in un unico file binario.
     */
-    public static void salvaDizionario(Map<String, Long> dizionario, String percorsoSalvataggio) throws IOException {
+    public static void salvaDizionarioETesto(Map<String, Long> dizionario, String testoIntegrale, String percorsoSalvataggio) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(percorsoSalvataggio))) {
-            oos.writeObject(dizionario);
-        }
-    }    
-    
-    /**
-    * Carica la mappa delle parole precedentemente salvata sul disco.
-    */
-    @SuppressWarnings("unchecked")
-    public static Map<String, Long> caricaDizionario(String percorsoSalvataggio) throws IOException, ClassNotFoundException {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(percorsoSalvataggio))) {
-            return (Map<String, Long>) ois.readObject();
+            oos.writeObject(dizionario);     // Primo oggetto scritto
+            oos.writeObject(testoIntegrale);  // Secondo oggetto scritto
         }
     }
+    
+    /**
+    * Carica dal file binario sia la mappa che il testo completo restituendoli come array di Object.
+    */
+   @SuppressWarnings("unchecked")
+   public static Object[] caricaDizionarioETesto(String percorsoSalvataggio) throws IOException, ClassNotFoundException {
+       try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(percorsoSalvataggio))) {
+           Map<String, Long> mappa = (Map<String, Long>) ois.readObject();
+           String testo = (String) ois.readObject();
+           return new Object[]{mappa, testo};
+       }
+   }
 }
