@@ -84,6 +84,32 @@ public class ClientHandler implements Runnable {
                     inviaMessaggio("LOGIN_FAIL: Formato comando non valido.");
                 }
                 break;
+            
+            case "REGISTRAZIONE":
+                String[] datiReg = parti[1].split(":");
+                if (datiReg.length == 3) {
+                    String rUser = datiReg[0];
+                    String rPass = datiReg[1];
+                    String rRuolo = datiReg[2];
+            
+                    // Creiamo l'oggetto modello Utente da passare al Database
+                    // Passiamo 0 come ID provvisorio, l'auto-increment del DB assegnerà quello reale
+                    Utente nuovoUtente = new Utente(rUser, rPass, rRuolo);
+            
+                    try {
+                        // Chiamiamo il metodo insert di UtenteDAO
+                        utenteDAO.insert(nuovoUtente);
+                
+                        // Comunichiamo al Client che la registrazione è riuscita!
+                        inviaMessaggio("REG_SUCCESS:Account creato! Adesso puoi fare il login.");
+                    } catch (Exception e) {
+                        // Se ad esempio l'username esiste già e genera un vincolo UNIQUE violato nel DB
+                        inviaMessaggio("REG_FAIL:Impossibile registrarsi. Username già esistente.");
+                    }
+                } else {
+                    inviaMessaggio("REG_FAIL:Formato dati registrazione errato.");
+                }
+                break;
                 
             case "RISPOSTA":
                 if (parti.length == 2) {
@@ -141,13 +167,10 @@ public class ClientHandler implements Runnable {
      * Interroga il DB e restituisce la stringa formattata della classifica globale.
      */
     private void gestisciRichiestaClassifica() {
-        // Qui richiamiamo il metodo che il tuo compagno strutturerà nell'UtenteDAO o DatabaseManager.
         // Deve restituire una stringa formattata così: "posizione,username,punti;posizione,username,punti;..."
         // Esempio: "1,Chiara,500;2,Mario,350;3,Luigi,200"
         
         try {
-            // Nota: Se il compagno non ha ancora implementato il metodo, puoi usare questa stringa di test simulata:
-            // String datiClassifica = "1,Chiara,500;2,Mario,350;3,Luigi,200";
             String datiClassifica = utenteDAO.getClassificaGlobaleFormattata(); 
             
             inviaMessaggio("DATI_CLASSIFICA:" + datiClassifica);

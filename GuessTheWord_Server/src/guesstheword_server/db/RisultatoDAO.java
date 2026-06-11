@@ -57,7 +57,7 @@ public class RisultatoDAO implements DAO<Risultato>{
     
     @Override
     public void insert(Risultato r) {
-        String sql = "INSERT INTO RISULTATO (id_partita, id_utente, esito, tempo_risposta) VALUES (?,?, ?, ?)";
+        String sql = "INSERT INTO RISULTATO (id_partita, id_utente, esito, tempo_risposta_ms) VALUES (?,?, ?, ?)";
         try(Connection conn = DatabaseManager.getConnection();
             PreparedStatement cmd = conn.prepareStatement(sql)){
             
