@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="480.0" prefWidth="400.0" style="-fx-background-color: #F4F6F9;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_client.controller.AuthController">
+   <children>
+      <StackPane layoutX="30.0" layoutY="30.0" prefHeight="420.0" prefWidth="340.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
+         <children>
+            
+            <VBox fx:id="paneLogin" alignment="CENTER" spacing="18.0" style="-fx-border-color: #E2E8F0; -fx-border-radius: 12; -fx-background-color: #FFFFFF; -fx-background-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 10);">
+               <children>
+                  <VBox alignment="CENTER" spacing="4.0">
+                     <children>
+                        <Label text="Guess The Word" textFill="#1E293B">
+                           <font>
+                              <Font name="System Bold" size="26.0" />
+                           </font>
+                        </Label>
+                        <Label text="Accedi per iniziare la sfida" textFill="#94A3B8">
+                           <font>
+                              <Font size="13.0" />
+                           </font>
+                        </Label>
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <VBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label text="Username" textFill="#475569">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="txtLoginUser" promptText="Inserisci username" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+                     </children>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <VBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label text="Password" textFill="#475569">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <PasswordField fx:id="txtLoginPass" promptText="Inserisci password" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+                     </children>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <Label fx:id="lblErroreLogin" alignment="CENTER" textFill="#EF4444" wrapText="true">
+                     <font>
+                        <Font name="System Italic" size="12.0" />
+                     </font>
+                  </Label>
+                  
+                  <Button maxWidth="1.0E308" mnemonicParsing="false" onAction="#gestisciLogin" style="-fx-background-color: #2563EB; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 10;" text="Accedi">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </Button>
+                  
+                  <HBox alignment="CENTER" spacing="6.0">
+                     <children>
+                        <Label text="Non hai un account?" textFill="#64748B" />
+                        <Button mnemonicParsing="false" onAction="#mostraPannelloRegistrazione" style="-fx-background-color: transparent; -fx-text-fill: #2563EB; -fx-underline: true; -fx-padding: 0; -fx-cursor: hand;" text="Registrati">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Button>
+                     </children>
+                     <VBox.margin>
+                        <Insets top="5.0" />
+                     </VBox.margin>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="24.0" top="24.0" />
+               </padding>
+            </VBox>
+            
+            <VBox fx:id="paneRegistrazione" alignment="CENTER" spacing="14.0" visible="false" style="-fx-border-color: #E2E8F0; -fx-border-radius: 12; -fx-background-color: #FFFFFF; -fx-background-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 10);">
+               <children>
+                  <VBox alignment="CENTER" spacing="4.0">
+                     <children>
+                        <Label text="Registrazione" textFill="#1E293B">
+                           <font>
+                              <Font name="System Bold" size="26.0" />
+                           </font>
+                        </Label>
+                        <Label text="Crea un account per giocare" textFill="#94A3B8">
+                           <font>
+                              <Font size="13.0" />
+                           </font>
+                        </Label>
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="5.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <VBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label text="Username" textFill="#475569">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="txtRegUser" promptText="Scegli un username" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+                     </children>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <VBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label text="Password" textFill="#475569">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <PasswordField fx:id="txtRegPass" promptText="Scegli una password" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+                     </children>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <VBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label text="Ruolo Utente" textFill="#475569">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Label>
+                        <ComboBox fx:id="comboRuolo" maxWidth="1.0E308" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 4;" />
+                     </children>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </VBox>
+                  
+                  <Label fx:id="lblErroreReg" alignment="CENTER" textFill="#EF4444" wrapText="true">
+                     <font>
+                        <Font name="System Italic" size="12.0" />
+                     </font>
+                  </Label>
+                  
+                  <Button maxWidth="1.0E308" mnemonicParsing="false" onAction="#gestisciRegistrazione" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 10;" text="Conferma Registrazione">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets left="24.0" right="24.0" />
+                     </VBox.margin>
+                  </Button>
+                  
+                  <HBox alignment="CENTER" spacing="6.0">
+                     <children>
+                        <Label text="Hai già un account?" textFill="#64748B" />
+                        <Button mnemonicParsing="false" onAction="#mostraPannelloLogin" style="-fx-background-color: transparent; -fx-text-fill: #10B981; -fx-underline: true; -fx-padding: 0; -fx-cursor: hand;" text="Accedi">
+                           <font>
+                              <Font name="System Bold" size="12.0" />
+                           </font>
+                        </Button>
+                     </children>
+                     <VBox.margin>
+                        <Insets top="20.0" />
+                     </VBox.margin>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="20.0" top="20.0" />
+               </padding>
+            </VBox>
+
+         </children>
+      </StackPane>
+   </children>
+</AnchorPane>

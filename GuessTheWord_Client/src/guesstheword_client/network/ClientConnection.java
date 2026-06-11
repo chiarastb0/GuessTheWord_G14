@@ -10,7 +10,7 @@ package guesstheword_client.network;
  * @author admin
  */
 
-import guesstheword_client.controller.ScreenGameController;
+import guesstheword_client.controller.*;
 import guesstheword_server.model.PacchettoSfida;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -33,8 +33,9 @@ public class ClientConnection implements Runnable {
     
     private boolean inAscolto = true;
 
-    // Riferimento al TUO controller della schermata di gioco 
+    // Riferimento al controller della schermata di gioco 
     private ScreenGameController controllerGioco;
+    private AuthController controllerAuth;
 
     public ClientConnection(String ip, int porta) {
         this.ip = ip;
@@ -101,6 +102,7 @@ public class ClientConnection implements Runnable {
         }
     }
 
+
     /**
      * Parsing del protocollo speculare a quello del Server.
      */
@@ -114,6 +116,43 @@ public class ClientConnection implements Runnable {
         switch (comando) {
             case "LOGIN_SUCCESS":
                 System.out.println("[LOGIN] Accesso eseguito con successo.");
+                
+                if (controllerAuth != null) {
+                    Platform.runLater(() -> {
+                        controllerAuth.mostraMessaggioErroreLogin("✅ Accesso riuscito!");
+                        // Nota: qui potrai inserire la logica del cambio di scena
+                        // verso l'interfaccia di gioco effettiva
+                        controllerAuth.gestisciLoginSuccess(this);
+                    });
+                }
+                break;
+              
+            case "LOGIN_FAIL": 
+                if (parti.length >= 2 && controllerAuth != null) {
+                    String errore = parti[1];
+                    Platform.runLater(() -> {
+                        controllerAuth.mostraMessaggioErroreLogin("❌ " + errore);
+                    });
+                }
+                break;
+                
+            case "REGISTRAZIONE_SUCCESS":
+                if (controllerAuth != null) {
+                    Platform.runLater(() -> {
+                        controllerAuth.mostraMessaggioErroreReg(""); // Pulisce
+                        controllerAuth.mostraPannelloLogin(null);   // Torna al login automatico
+                        controllerAuth.mostraMessaggioErroreLogin("✅ Registrazione completata! Effettua il login.");
+                    });
+                }
+                break;
+            
+            case "REGISTRAZIONE_ERROR":
+                if (parti.length >= 2 && controllerAuth != null) {
+                    String errore = parti[1];
+                    Platform.runLater(() -> {
+                        controllerAuth.mostraMessaggioErroreReg("❌ " + errore);
+                    });
+                }
                 break;
 
             case "START_GAME":
@@ -203,6 +242,11 @@ public class ClientConnection implements Runnable {
         }
     }
 
+        
+    public void setControllerAuth(AuthController controller) {
+        this.controllerAuth = controller;
+    }
+    
     /**
      * Permette al tuo SchermataGiocoController di "registrarsi" così da poter ricevere
      * i testi cifrati non appena la partita comincia.

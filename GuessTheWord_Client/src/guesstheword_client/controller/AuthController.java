@@ -10,12 +10,16 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 public class AuthController implements Initializable {
 
@@ -43,6 +47,9 @@ public class AuthController implements Initializable {
     
     public void setClientConnection(ClientConnection connessione) {
         this.clientConnection = connessione;
+        if (connessione != null) {
+            connessione.setControllerAuth(this);
+        }
     }
 
     @FXML
@@ -101,6 +108,40 @@ public class AuthController implements Initializable {
             clientConnection.spedisciMessaggio("REGISTRAZIONE:" + user + ":" + pass + ":" + ruolo);
         } else {
             lblErroreReg.setText("❌ Errore: Nessuna connessione al server.");
+        }
+    }
+    
+    public void gestisciLoginSuccess(ClientConnection connessione) {
+    try {
+        // 1. Carica il file FXML della schermata di gioco
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/ScreenGameView.fxml"));
+            Parent giocoRoot = loader.load();
+        
+        // 2. Recupera il controller della schermata di gioco
+            ScreenGameController controllerGioco = loader.getController();
+        
+        // 3. Sincronizza i riferimenti incrociati (Fondamentale!)
+        // Assegna la connessione di rete al controller di gioco
+            controllerGioco.setClientConnection(connessione);
+        // Aggiorna il riferimento del controller dentro ClientConnection 
+        // in modo che i messaggi successivi (es. START_GAME, CLASSIFICA) vadano alla nuova schermata
+            connessione.setControllerGioco(controllerGioco);
+        
+        // 4. Recupera lo Stage corrente
+        // Puoi farlo usando un qualsiasi nodo grafico presente nella tua AuthView (es. txtUsername o un bottone)
+            Stage stage = (Stage) paneLogin.getScene().getWindow(); 
+        
+        // 5. Crea la nuova scena e mostra lo stage aggiornato
+            Scene scenaGioco = new Scene(giocoRoot);
+            stage.setScene(scenaGioco);
+            stage.setTitle("Guess The Word - Area Gioco");
+            stage.centerOnScreen(); // Opzionale: centra la nuova finestra sullo schermo
+            stage.show();
+        
+        } catch (Exception e) {
+            System.err.println("Errore durante il cambio di scena verso il gioco: " + e.getMessage());
+            e.printStackTrace();
+            mostraMessaggioErroreLogin("❌ Errore nel caricamento della schermata di gioco.");
         }
     }
     
