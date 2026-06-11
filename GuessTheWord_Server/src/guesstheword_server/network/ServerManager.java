@@ -21,7 +21,11 @@ public class ServerManager {
     //VARIABILI PER LA GESTIONE DELLA SFIDA
     private Map<String, Long> dizionarioAttivo;
     private String testoIntegraleAttivo; // Contiene l'intero file .txt
-    private String parolaSegretaCorrente; 
+    private String parolaSegretaCorrente;
+    
+    //VARIABILI PER GESTIRE STATO PARTITA
+    private boolean partitaInCorso = false;
+    private Timer timerPartita;
 
     // Riceve sia la mappa che il testo integrale dall'interfaccia Admin
     public void setDatiSfida(Map<String, Long> dizionario, String testoIntegrale) {
@@ -89,7 +93,7 @@ public class ServerManager {
         // 2. Generazione dello spostamento per il Cifrario (es. tra 1 e 10)
         int spostamentoCasuale = new Random().nextInt(10) + 1;
         
-        // 3. Cifratura della sola parola scelta mediante Chiara
+        // 3. Cifratura della sola parola scelta mediante 
         String parolaCifrata = guesstheword_server.utils.CifrarioUtils.cifratura(this.parolaSegretaCorrente, spostamentoCasuale);
         
         // 4. Sostituzione dinamica nel testo originale rispettando i confini della parola (\b)
@@ -97,12 +101,21 @@ public class ServerManager {
         String testoModificatoConContesto = this.testoIntegraleAttivo.replaceAll("(?i)\\b" + this.parolaSegretaCorrente + "\\b", "[ " + parolaCifrata + " ]");
         
         int durataTimer = 60; 
+        this.partitaInCorso = true; // Dichiariamo la partita ufficialmente aperta!
 
-        System.out.println("[SERVER] Parola da indovinare: " + this.parolaSegretaCorrente + " | Inserita nel contesto cifrato.");
+        // Creiamo il timer del Server: se scade senza vincitori, chiama il Pareggio
+        if (timerPartita != null) timerPartita.cancel();
+        timerPartita = new Timer();
+        timerPartita.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                terminaPartitaPareggio();
+            }
+        }, durataTimer * 1000L); // Convertito in millisecondi
 
-        // 5. Creazione del pacchetto serializzato contenente il testo d'estratto completo modificato
+        System.out.println("[SERVER] Parola da indovinare: " + this.parolaSegretaCorrente + " | Timer avviato: " + durataTimer + "s");
+
         PacchettoSfida pacchetto = new PacchettoSfida(testoModificatoConContesto, durataTimer);
-
         for (ClientHandler giocatore : giocatoriPronti) {
             giocatore.inviaOggetto(pacchetto); 
         }
@@ -118,5 +131,65 @@ public class ServerManager {
     
     public void ferma() {
         this.inEsecuzione = false;
+    }
+    
+    /**
+     * Riceve il tentativo dal ClientHandler e verifica se è corretto
+     */
+    public synchronized void verificaTentativo(ClientHandler giocatore, String tentativo) {
+        if (!partitaInCorso) return; // Se il tempo è scaduto o qualcuno ha già vinto, ignora
+
+        // Confronto ignorando maiuscole/minuscole e spazi accidentali
+        if (tentativo.trim().equalsIgnoreCase(this.parolaSegretaCorrente)) {
+            terminaPartitaVittoria(giocatore);
+        } else {
+            // (Opzionale ma utile) Diciamo al client che ha sbagliato così può riprovare
+            giocatore.inviaMessaggio("RISPOSTA_ERRATA:Ritenta!");
+        }
+    }
+
+    /**
+     * Ferma il gioco e decreta il vincitore assoluto
+     */
+    private synchronized void terminaPartitaVittoria(ClientHandler vincitore) {
+        if (!partitaInCorso) return;
+        partitaInCorso = false;
+        timerPartita.cancel(); // Spegniamo il timer!
+
+        System.out.println("[FINE PARTITA] Ha vinto " + vincitore.getUsernameUtente());
+
+        // Inviamo a tutti i client il responso finale
+        for (ClientHandler giocatore : giocatoriPronti) {
+            if (giocatore == vincitore) {
+                giocatore.inviaMessaggio("FINE_PARTITA:VITTORIA:Hai indovinato la parola segreta: " + parolaSegretaCorrente);
+            } else {
+                giocatore.inviaMessaggio("FINE_PARTITA:SCONFITTA:Il giocatore " + vincitore.getUsernameUtente() + " ha indovinato: " + parolaSegretaCorrente);
+            }
+        }
+        resetPartita();
+    }
+
+    /**
+     * Se il timer scade, nessuno ha vinto
+     */
+    private synchronized void terminaPartitaPareggio() {
+        if (!partitaInCorso) return;
+        partitaInCorso = false;
+
+        System.out.println("[FINE PARTITA] Tempo scaduto. Pareggio!");
+
+        for (ClientHandler giocatore : giocatoriPronti) {
+            giocatore.inviaMessaggio("FINE_PARTITA:PAREGGIO:Tempo scaduto! La parola era: " + parolaSegretaCorrente);
+        }
+        resetPartita();
+    }
+
+    /**
+     * Svuota la lista dei giocatori attuali per permettere l'inizio di una nuova sfida
+     */
+    private void resetPartita() {
+        // Qui in futuro metteremo anche la logica di salvataggio sul Database (PartitaDAO)
+        giocatoriPronti.clear();
+        System.out.println("[SERVER] Campo da gioco resettato. In attesa di nuove sfide...");
     }
 }
