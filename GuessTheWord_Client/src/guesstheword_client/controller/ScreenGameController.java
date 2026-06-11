@@ -11,6 +11,7 @@ package guesstheword_client.controller;
  */
 
 import guesstheword_client.model.PartitaStorico; 
+import guesstheword_client.model.Classifica; 
 import guesstheword_client.network.ClientConnection;
 import java.net.URL;
 import javafx.util.Duration;
@@ -30,7 +31,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 public class ScreenGameController implements Initializable {
 
-    // COMPONENTI SCHEDA GIOCO
+    // --- COMPONENTI SCHEDA GIOCO ---
     @FXML
     private Label lblTimer;
     @FXML
@@ -38,7 +39,7 @@ public class ScreenGameController implements Initializable {
     @FXML
     private TextField txtRisposta;
 
-    // COMPONENTI SCHEDA STORICO 
+    // --- COMPONENTI SCHEDA STORICO ---
     @FXML
     private TableView<PartitaStorico> tabellaStorico;
     @FXML
@@ -50,24 +51,38 @@ public class ScreenGameController implements Initializable {
     @FXML
     private TableColumn<PartitaStorico, Integer> colPunteggio;
 
-    // La lista di JavaFX che fa apparire le righe nella tabella
+    // --- COMPONENTI SCHEDA CLASSIFICHE (Nuovi!) ---
+    @FXML
+    private TableView<Classifica> tabellaClassifica;
+    @FXML
+    private TableColumn<Classifica, Integer> colPosizione;
+    @FXML
+    private TableColumn<Classifica, String> colUtente;
+    @FXML
+    private TableColumn<Classifica, Integer> colPuntiTotali;
+
+    // Liste di supporto JavaFX per popolare le tabelle
     private final ObservableList<PartitaStorico> datiStorico = FXCollections.observableArrayList();
+    private final ObservableList<Classifica> datiClassifica = FXCollections.observableArrayList();
 
     private ClientConnection clientConnection;
-    
     private Timeline timeline;
     private int secondiRimanenti;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // CONTRATTO DELLA TABELLA: colleghiamo le colonne ai get della classe PartitaStorico
+        // 1. Inizializzazione Tabella Storico
         colData.setCellValueFactory(new PropertyValueFactory<>("data"));
         colParola.setCellValueFactory(new PropertyValueFactory<>("parola"));
         colEsito.setCellValueFactory(new PropertyValueFactory<>("esito"));
         colPunteggio.setCellValueFactory(new PropertyValueFactory<>("punteggio"));
-        
-        // Colleghiamo la lista alla tabella
         tabellaStorico.setItems(datiStorico);
+        
+        // 2. Inizializzazione Tabella Classifica (Mappiamo i get di RigaClassifica)
+        colPosizione.setCellValueFactory(new PropertyValueFactory<>("posizione"));
+        colUtente.setCellValueFactory(new PropertyValueFactory<>("utente"));
+        colPuntiTotali.setCellValueFactory(new PropertyValueFactory<>("puntiTotali"));
+        tabellaClassifica.setItems(datiClassifica);
     }    
     
     public void setClientConnection(ClientConnection connessione) {
@@ -80,16 +95,13 @@ public class ScreenGameController implements Initializable {
         txtRisposta.setDisable(false);
         txtRisposta.clear();
         
-        // Convertiamo il tempo ricevuto dal server in un intero
         this.secondiRimanenti = Integer.parseInt(tempo);
         lblTimer.setText(secondiRimanenti + " secondi");
 
-        // Se c'era un vecchio timer attivo, lo fermiamo
         if (timeline != null) {
             timeline.stop();
         }
 
-        // Creiamo il conto alla rovescia asincrono
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
             secondiRimanenti--;
             lblTimer.setText(secondiRimanenti + " secondi");
@@ -102,9 +114,8 @@ public class ScreenGameController implements Initializable {
             }
         }));
     
-        // Diciamo alla timeline di ripetersi per il numero di secondi stabiliti
         timeline.setCycleCount(secondiRimanenti);
-        timeline.play(); // Via al conto alla rovescia!
+        timeline.play();
     }
 
     @FXML
@@ -117,7 +128,22 @@ public class ScreenGameController implements Initializable {
     }
 
     /**
-     * Questo metodo permette alla rete di iniettare dati storici nella tabella
+     * Permette alla rete di svuotare e aggiornare la classifica globale
+     */
+    public void svuotaClassifica() {
+        datiClassifica.clear();
+    }
+
+    /**
+     * Permette alla rete di iniettare un record della classifica alla volta
+     */
+    public void aggiungiGiocatoreAClassifica(int posizione, String utente, int puntiTotali) {
+        Classifica nuovaRiga = new Classifica(posizione, utente, puntiTotali);
+        datiClassifica.add(nuovaRiga);
+    }
+
+    /**
+     * Permette alla rete di iniettare dati storici personali nella tabella storico
      */
     public void aggiungiPartitaAStorico(String data, String parola, String esito, int punteggio) {
         PartitaStorico nuovaRiga = new PartitaStorico(data, parola, esito, punteggio);

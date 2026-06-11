@@ -111,7 +111,7 @@ public class UtenteDAO implements DAO<Utente> {
         return new Utente(id, username, password, ruolo);
     }
     
-        public Optional<Utente> login(String username, String password) {
+    public Optional<Utente> login(String username, String password) {
         String sql = "SELECT * FROM UTENTE WHERE username = ? AND password = ?";
         try (Connection connection = DatabaseManager.getConnection();
             PreparedStatement cmd = connection.prepareStatement(sql)) {
@@ -128,6 +128,74 @@ public class UtenteDAO implements DAO<Utente> {
             throw new DBException("Errore nel login", exc);
         }
         return Optional.empty();
+    }
+        
+     /**
+     * Recupera la classifica globale di tutti gli utenti ordinati per punteggio decrescente.
+     * Formato: posizione,username,punti;posizione,username,punti;...
+     */
+    public String getClassificaGlobaleFormattata() {
+        StringTokenizer stringaFormattata = new StringTokenizer(""); // Strumento o StringJoiner
+        StringJoiner sj = new StringJoiner(";");
+        
+        // Se la colonna dei punti totali è dentro la tabella UTENTE (es. punti_totali)
+        String sql = "SELECT username, punti_totali FROM UTENTE ORDER BY punti_totali DESC";
+        
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement cmd = connection.prepareStatement(sql);
+             ResultSet rs = cmd.executeQuery()) {
+            
+            int posizione = 1;
+            while (rs.next()) {
+                String username = rs.getString("username");
+                int punti = rs.getInt("punti_totali");
+                
+                // Crea la riga separata da virgole
+                sj.add(posizione + "," + username + "," + punti);
+                posizione++;
+            }
+            
+        } catch (SQLException exc) {
+            throw new DBException("Errore nel recupero della classifica globale", exc);
+        }
+        
+        // Se la classifica è vuota restituisce una stringa sicura per non far crashare lo split del client
+        return sj.length() > 0 ? sj.toString() : "0,Nessun dato disponibile,0";
+    }
+
+    /**
+     * Recupera la cronologia delle sfide giocate da uno specifico utente dal database.
+     * Formato: data,parola,esito,punti;data,parola,esito,punti;...
+     */
+    public String getStoricoPartiteFormattato(String username) {
+        StringJoiner sj = new StringJoiner(";");
+        
+        // Query sulla tabella delle partite collegate all'utente tramite username o FK
+        String sql = "SELECT data_partita, parola_segreta, esito, punteggio_ottenuto " +
+                     "FROM PARTITA WHERE fk_username = ? ORDER BY data_partita DESC";
+        
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement cmd = connection.prepareStatement(sql)) {
+            
+            cmd.setString(1, username);
+            
+            try (ResultSet rs = cmd.executeQuery()) {
+                while (rs.next()) {
+                    String data = rs.getString("data_partita");
+                    String parola = rs.getString("parola_segreta");
+                    String esito = rs.getString("esito");
+                    int punti = rs.getInt("punteggio_ottenuto");
+                    
+                    sj.add(data + "," + parola + "," + esito + "," + punti);
+                }
+            }
+            
+        } catch (SQLException exc) {
+            throw new DBException("Errore nel recupero dello storico partite per l'utente " + username, exc);
+        }
+        
+        // Se l'utente non ha mai giocato, restituisce una riga fittizia di benvenuto
+        return sj.length() > 0 ? sj.toString() : "---,Nessuna partita giocata,---,0";
     }
         
 }

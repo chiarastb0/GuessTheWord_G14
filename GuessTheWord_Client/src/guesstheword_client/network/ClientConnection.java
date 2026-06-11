@@ -12,12 +12,9 @@ package guesstheword_client.network;
 
 import guesstheword_client.controller.ScreenGameController;
 import guesstheword_server.model.PacchettoSfida;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import javafx.application.Platform;
 
@@ -71,14 +68,14 @@ public class ClientConnection implements Runnable {
             Object objRicevuto;
             while (inAscolto && (objRicevuto = in.readObject()) != null) {
                 
-                // CASO 1: Vecchie Stringhe (Login, ecc.)
+                // CASO 1: Stringhe di testo e Protocollo comandi
                 if (objRicevuto instanceof String) {
                     String rigaRicevuta = (String) objRicevuto;
                     System.out.println("[SERVER DICE]: " + rigaRicevuta);
                     elaboraMessaggioServer(rigaRicevuta); 
                 }
                 
-                // CASO 2:Serializzazione 
+                // CASO 2: Serializzazione Oggetto PacchettoSfida
                 else if (objRicevuto instanceof PacchettoSfida) {
                     PacchettoSfida pacchetto = (PacchettoSfida) objRicevuto;
                     
@@ -97,8 +94,10 @@ public class ClientConnection implements Runnable {
             }
         } catch (Exception e) {
             System.err.println("[CLIENT] Connessione con il server interrotta: " + e.getMessage());
+        } catch (NoClassDefFoundError e) {
+            System.err.println("[CLIENT] Errore di sincronizzazione classi con il server: " + e.getMessage());
         } finally {
-            chiudiConnessione(); // Chiama intatto il metodo del tuo compagno
+            chiudiConnessione();
         }
     }
 
@@ -106,27 +105,76 @@ public class ClientConnection implements Runnable {
      * Parsing del protocollo speculare a quello del Server.
      */
     private void elaboraMessaggioServer(String messaggio) {
-        String[] parti = messaggio.split(":");
+        // Separiamo l'intestazione del comando dal resto dei dati
+        String[] parti = messaggio.split(":", 2); 
         if (parti.length == 0) return;
 
         String comando = parti[0].toUpperCase();
 
         switch (comando) {
             case "LOGIN_SUCCESS":
-                // Gestito inizialmente dal compagno 3 per cambiare schermata
-                System.out.println("[LOGIN] Accesso eseguito come: " + parti[1]);
+                System.out.println("[LOGIN] Accesso eseguito con successo.");
                 break;
 
             case "START_GAME":
-                // QUESTO TOCCA A TE! Il server invia il testo cifrato (es. START_GAME:tempo:testoCifrato)
-                if (parti.length >= 3 && controllerGioco != null) {
-                    String tempoInSecondi = parti[1];
-                    String testoCifrato = parti[2];
+                // Il server invia il comando vecchio stile: START_GAME:tempo:testoCifrato
+                // Gestito per retrocompatibilità se non usa l'oggetto PacchettoSfida
+                String[] sottoParti = parti[1].split(":", 2);
+                if (sottoParti.length >= 2 && controllerGioco != null) {
+                    String tempoInSecondi = sottoParti[0];
+                    String testoCifrato = sottoParti[1];
 
-                    // TRUCCONE JAVAFX MANDATORIO: Siccome siamo in un Thread di rete, 
-                    // per modificare elementi grafici (Label, TextArea) dobbiamo usare Platform.runLater
                     Platform.runLater(() -> {
                         controllerGioco.inizializzaPartita(tempoInSecondi, testoCifrato);
+                    });
+                }
+                break;
+
+            case "DATI_CLASSIFICA":
+                // Formato atteso dal Server: DATI_CLASSIFICA:posizione,username,punti;posizione,username,punti;...
+                if (parti.length >= 2 && controllerGioco != null) {
+                    String contenuto = parti[1];
+                    String[] righeGiocatori = contenuto.split(";");
+
+                    // Usiamo Platform.runLater per aggiornare in sicurezza la TableView
+                    Platform.runLater(() -> {
+                        controllerGioco.svuotaClassifica(); // Resetta i vecchi dati
+                        for (String riga : righeGiocatori) {
+                            if (!riga.trim().isEmpty()) {
+                                String[] dati = riga.split(",");
+                                int pos = Integer.parseInt(dati[0]);
+                                String username = dati[1];
+                                int punti = Integer.parseInt(dati[2]);
+                                
+                                // Inietta la riga nel controller
+                                controllerGioco.aggiungiGiocatoreAClassifica(pos, username, punti);
+                            }
+                        }
+                    });
+                }
+                break;
+
+            case "DATI_STORICO":
+                // Formato atteso dal Server: DATI_STORICO:data,parola,esito,punti;data,parola,esito,punti;...
+                if (parti.length >= 2 && controllerGioco != null) {
+                    String contenutoStorico = parti[1];
+                    String[] righeStorico = contenutoStorico.split(";");
+
+                    Platform.runLater(() -> {
+                        // Nota: Lo storico di solito mostra i dati cumulativi, non serve svuotarlo 
+                        // a meno che non si voglia ricaricare completamente da zero la lista.
+                        for (String riga : righeStorico) {
+                            if (!riga.trim().isEmpty()) {
+                                String[] dati = riga.split(",");
+                                String data = dati[0];
+                                String parola = dati[1];
+                                String esito = dati[2];
+                                int punteggio = Integer.parseInt(dati[3]);
+                                
+                                // Inietta il match giocato nella tabella dello Storico personale
+                                controllerGioco.aggiungiPartitaAStorico(data, parola, esito, punteggio);
+                            }
+                        }
                     });
                 }
                 break;
@@ -136,7 +184,7 @@ public class ClientConnection implements Runnable {
                 break;
 
             default:
-                System.out.println("[CLIENT] Comando non riconosciuto: " + comando);
+                System.out.println("[CLIENT] Comando non riconosciuto o gestito altrove: " + comando);
                 break;
         }
     }
