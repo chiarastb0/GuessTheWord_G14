@@ -119,6 +119,7 @@ public class ClientHandler implements Runnable {
                 if (parti.length == 2) {
                     String parolaTentata = parti[1];
                     System.out.println("[GIOCO] L'utente " + getUsernameUtente() + " ha tentato: " + parolaTentata);
+                    serverManager.verificaTentativo(this, parolaTentata);
                 }
                 break;
 
