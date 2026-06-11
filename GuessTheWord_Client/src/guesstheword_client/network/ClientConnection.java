@@ -107,11 +107,15 @@ public class ClientConnection implements Runnable {
      * Parsing del protocollo speculare a quello del Server.
      */
     private void elaboraMessaggioServer(String messaggio) {
+        
+        // Rimuoviamo eventuali spazi o ritorni a capo trasmessi dal flusso di rete all'inizio/fine
+        messaggio = messaggio.trim();
+        
         // Separiamo l'intestazione del comando dal resto dei dati
         String[] parti = messaggio.split(":", 2); 
         if (parti.length == 0) return;
 
-        String comando = parti[0].toUpperCase();
+        String comando = parti[0].toUpperCase().trim();
 
         switch (comando) {
             case "LOGIN_SUCCESS":
@@ -136,17 +140,23 @@ public class ClientConnection implements Runnable {
                 }
                 break;
                 
-            case "REGISTRAZIONE_SUCCESS":
+            case "REG_SUCCESS":
+                System.out.println("[REGISTRAZIONE] Risposta di successo elaborata correttamente.");
                 if (controllerAuth != null) {
+                // Recuperiamo il messaggio reale inviato dal server (se presente), altrimenti usiamo uno di fallback
+                    final String messaggioServer = (parti.length >= 2) ? parti[1].trim() : "Registrazione completata!";
+                
                     Platform.runLater(() -> {
-                        controllerAuth.mostraMessaggioErroreReg(""); // Pulisce
-                        controllerAuth.mostraPannelloLogin(null);   // Torna al login automatico
-                        controllerAuth.mostraMessaggioErroreLogin("✅ Registrazione completata! Effettua il login.");
+                        controllerAuth.mostraMessaggioErroreReg(""); // Svuota l'errore nel pannello reg
+                        controllerAuth.mostraPannelloLogin(null);   // Scambia i pannelli VBox
+                    
+                        // Mostriamo a schermo il vero messaggio che arriva dal server!
+                        controllerAuth.mostraMessaggioErroreLogin("✅ " + messaggioServer);
                     });
                 }
                 break;
             
-            case "REGISTRAZIONE_ERROR":
+            case "REG_FAIL":
                 if (parti.length >= 2 && controllerAuth != null) {
                     String errore = parti[1];
                     Platform.runLater(() -> {
