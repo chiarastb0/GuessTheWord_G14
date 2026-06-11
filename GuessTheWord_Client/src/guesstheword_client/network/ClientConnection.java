@@ -36,6 +36,7 @@ public class ClientConnection implements Runnable {
     // Riferimento al controller della schermata di gioco 
     private ScreenGameController controllerGioco;
     private AuthController controllerAuth;
+    private LobbyController controllerLobby;
 
     public ClientConnection(String ip, int porta) {
         this.ip = ip;
@@ -86,9 +87,17 @@ public class ClientConnection implements Runnable {
                     System.out.println("Testo della sfida: " + pacchetto.getParolaCifrata());
                     System.out.println("==================================================");
                     
-                    if (controllerGioco != null) {
+                    if (controllerLobby != null) {
                         Platform.runLater(() -> {
-                            controllerGioco.inizializzaPartita(String.valueOf(pacchetto.getDurataTimerSecondi()), pacchetto.getParolaCifrata());
+                        controllerLobby.avviaSchermataGioco(); // Carica ScreenGameView
+            
+                            // Passiamo i dati al controller di gioco appena svegliato
+                        if (controllerGioco != null) {
+                            controllerGioco.inizializzaPartita(
+                            String.valueOf(pacchetto.getDurataTimerSecondi()), 
+                            pacchetto.getParolaCifrata()
+                        );
+                        }
                         });
                     }
                 }
@@ -169,18 +178,27 @@ public class ClientConnection implements Runnable {
                 break;
 
             case "START_GAME":
-                // Il server invia il comando vecchio stile: START_GAME:tempo:testoCifrato
-                // Gestito per retrocompatibilità se non usa l'oggetto PacchettoSfida
-                String[] sottoParti = parti[1].split(":", 2);
-                if (sottoParti.length >= 2 && controllerGioco != null) {
-                    String tempoInSecondi = sottoParti[0];
-                    String testoCifrato = sottoParti[1];
+            // 1. Separiamo il tempo dal testo cifrato
+            String[] sottoParti = parti[1].split(":", 2);
+            if (sottoParti.length >= 2) {
+                String tempoInSecondi = sottoParti[0];
+                String testoCifrato = sottoParti[1];
 
-                    Platform.runLater(() -> {
-                        controllerGioco.inizializzaPartita(tempoInSecondi, testoCifrato);
-                    });
+                // 2. Controlliamo se siamo nella lobby di attesa
+            if (controllerLobby != null) {
+                Platform.runLater(() -> {
+                // Ordiniamo alla lobby di caricare la schermata di gioco
+                controllerLobby.avviaSchermataGioco();
+                
+                // 3. Ora che la scena è cambiata, recuperiamo il nuovo controller di gioco 
+                // appena agganciato e gli passiamo i dati inviati dal server
+                if (controllerGioco != null) {
+                    controllerGioco.inizializzaPartita(tempoInSecondi, testoCifrato);
                 }
-                break;
+                });
+              }
+            }
+            break;
             
             case "FINE_PARTITA":
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
@@ -262,10 +280,13 @@ public class ClientConnection implements Runnable {
             System.err.println("Errore spedizione messaggio client: " + e.getMessage());
         }
     }
-
         
     public void setControllerAuth(AuthController controller) {
         this.controllerAuth = controller;
+    }
+    
+    public void setControllerLobby(LobbyController controller) {
+        this.controllerLobby = controller;
     }
     
     /**
@@ -290,4 +311,5 @@ public class ClientConnection implements Runnable {
             System.err.println("[CLIENT] Errore durante la chiusura delle risorse: " + e.getMessage());
         }
     }
-}
+
+} 

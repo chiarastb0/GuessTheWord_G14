@@ -118,9 +118,13 @@ public class AuthController implements Initializable {
             }
         
         // 1. Carica il file FXML della schermata di gioco
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/ScreenGameView.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/LobbyView.fxml"));
             Parent giocoRoot = loader.load();
         
+        // 2. Recupera il controller della lobby
+            LobbyController controllerLobby = loader.getController();
+            
+            controllerLobby.setClientConnection(connessione);
         // 2. Recupera il controller della schermata di gioco
             ScreenGameController controllerGioco = loader.getController();
         
@@ -129,7 +133,7 @@ public class AuthController implements Initializable {
             controllerGioco.setClientConnection(connessione);
         // Aggiorna il riferimento del controller dentro ClientConnection 
         // in modo che i messaggi successivi (es. START_GAME, CLASSIFICA) vadano alla nuova schermata
-            connessione.setControllerGioco(controllerGioco);
+            connessione.setControllerLobby(controllerLobby);
         
         // 4. Recupera lo Stage corrente
         // Puoi farlo usando un qualsiasi nodo grafico presente nella tua AuthView (es. txtUsername o un bottone)
@@ -138,14 +142,14 @@ public class AuthController implements Initializable {
         // 5. Crea la nuova scena e mostra lo stage aggiornato
             Scene scenaGioco = new Scene(giocoRoot);
             stage.setScene(scenaGioco);
-            stage.setTitle("Guess The Word - Area Gioco");
+            stage.setTitle("Guess The Word - Lobby di Attesa");
             stage.centerOnScreen(); // Opzionale: centra la nuova finestra sullo schermo
             stage.show();
         
         } catch (Exception e) {
-            System.err.println("Errore durante il cambio di scena verso il gioco: " + e.getMessage());
+            System.err.println("Errore durante il cambio di scena verso la lobby: " + e.getMessage());
             e.printStackTrace();
-            mostraMessaggioErroreLogin("❌ Errore nel caricamento della schermata di gioco.");
+            mostraMessaggioErroreLogin("❌ Errore nel caricamento della lobby di attesa.");
         }
     }
     
