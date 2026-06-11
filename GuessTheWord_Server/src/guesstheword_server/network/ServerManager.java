@@ -7,6 +7,7 @@ package guesstheword_server.network;
 
 import guesstheword_server.ConfigManager;
 import guesstheword_server.model.PacchettoSfida;
+import guesstheword_server.utils.CifrarioUtils;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
@@ -14,10 +15,24 @@ import java.util.*;
 
 public class ServerManager {
     private boolean inEsecuzione = true;
-    // Lista di tutti i gestori dei client attualmente connessi alla rete
     private final List<ClientHandler> clientConnessi = new ArrayList<>();
-    // Lista specifica dei soli sfidanti che hanno superato il login con successo (Fase 3)
     private final List<ClientHandler> giocatoriPronti = new ArrayList<>();
+    
+    //VARIABILI PER LA GESTIONE DELLA SFIDA
+    private Map<String, Long> dizionarioAttivo;
+    private String testoIntegraleAttivo; // Contiene l'intero file .txt
+    private String parolaSegretaCorrente; 
+
+    // Riceve sia la mappa che il testo integrale dall'interfaccia Admin
+    public void setDatiSfida(Map<String, Long> dizionario, String testoIntegrale) {
+        this.dizionarioAttivo = dizionario;
+        this.testoIntegraleAttivo = testoIntegrale;
+        System.out.println("[SERVER] ServerManager configurato con " + dizionario.size() + " parole e testo integrale pronti.");
+    }
+
+    public String getParolaSegretaCorrente() {
+        return this.parolaSegretaCorrente;
+    }
     
     public void start() {
         int port = ConfigManager.getServerPort(); 
@@ -26,22 +41,17 @@ public class ServerManager {
             System.out.println("Server avviato correttamente sulla porta: " + port);
            
             while (inEsecuzione) {
-                // Il server si blocca qui in attesa di una chiamata dal Client
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Nuovo client connesso da: " + clientSocket.getRemoteSocketAddress());
                 
-                // Istanziamo il ClientHandler passando il socket e questo ServerManager
                 ClientHandler handler = new ClientHandler(clientSocket, this);
                 
                 synchronized (clientConnessi) {
                     clientConnessi.add(handler);
                 }
                 
-                // Crea e fa partire il Thread indipendente.
                 Thread t = new Thread(handler);
                 t.start();
-                
-                // CORRETTO: Rimosse le righe di forcing del test che lanciavano la sfida senza login!
             }
             
         } catch (IOException e) {
@@ -50,49 +60,56 @@ public class ServerManager {
     }
     
     public synchronized void giocatoreAutenticato(ClientHandler handler) {
-        // Accettiamo giocatori solo se non abbiamo già una sfida al completo
         if (giocatoriPronti.size() < 2) {
             giocatoriPronti.add(handler);
             System.out.println("[MATCHMAKING] Giocatore '" + handler.getUsernameUtente() + "' pronto! (" + giocatoriPronti.size() + "/2)");
             
-            // Logica Matchmaking (Fase 3): Quando DUE giocatori hanno fatto il login con successo 
             if (giocatoriPronti.size() == 2) {
                 avviaSfida();
             }
         } else {
-            // Se un terzo giocatore prova ad accodarsi a partita in corso, inviamo una notifica di rifiuto
             handler.inviaMessaggio("ERRORE: Partita già in corso. Riprova più tardi.");
         }
     }
     
-    /**
-     * Attiva la sfida notificando i client e chiamando la logica di gioco (Fase 3)
-     */
     private void avviaSfida() {
-        System.out.println("[SERVER] Entrambi i giocatori sono pronti! Avvio della sfida in tempo reale..."); 
+        System.out.println("[SERVER] Entrambi i giocatori sono pronti! Preparazione della sfida..."); 
         
-        // 1. Definiamo i dati della sfida (Per ora statici, poi integrati con il Compagno 2)
+        // 1. Selezione della parola e fallback di sicurezza
+        if (dizionarioAttivo == null || dizionarioAttivo.isEmpty() || testoIntegraleAttivo == null) {
+            System.err.println("[SERVER WARNING] Dati incompleti! Uso dati di default.");
+            this.parolaSegretaCorrente = "AVVOCATO";
+            this.testoIntegraleAttivo = "Non fare l' AVVOCATO delle cause perse";
+        } else {
+            List<String> listaParole = new ArrayList<>(dizionarioAttivo.keySet());
+            Random random = new Random();
+            this.parolaSegretaCorrente = listaParole.get(random.nextInt(listaParole.size())).toUpperCase();
+        }
+
+        // 2. Generazione dello spostamento per il Cifrario (es. tra 1 e 10)
+        int spostamentoCasuale = new Random().nextInt(10) + 1;
+        
+        // 3. Cifratura della sola parola scelta mediante Chiara
+        String parolaCifrata = guesstheword_server.utils.CifrarioUtils.cifratura(this.parolaSegretaCorrente, spostamentoCasuale);
+        
+        // 4. Sostituzione dinamica nel testo originale rispettando i confini della parola (\b)
+        // (?i) rende il matching case-insensitive
+        String testoModificatoConContesto = this.testoIntegraleAttivo.replaceAll("(?i)\\b" + this.parolaSegretaCorrente + "\\b", "[ " + parolaCifrata + " ]");
+        
         int durataTimer = 60; 
-        String testoCifratoFittizio = "Il _ _ _ _ _ è sul tavolo."; 
 
-        // 2. Prepariamo l'oggetto serializzabile
-        PacchettoSfida pacchetto = new PacchettoSfida(testoCifratoFittizio, durataTimer);
+        System.out.println("[SERVER] Parola da indovinare: " + this.parolaSegretaCorrente + " | Inserita nel contesto cifrato.");
 
-        // 3. Comunica a entrambi i client l'inizio del gioco inviando l'oggetto
+        // 5. Creazione del pacchetto serializzato contenente il testo d'estratto completo modificato
+        PacchettoSfida pacchetto = new PacchettoSfida(testoModificatoConContesto, durataTimer);
+
         for (ClientHandler giocatore : giocatoriPronti) {
             giocatore.inviaOggetto(pacchetto); 
         }
         
-        System.out.println("[SERVER] Pacchetto dati di gioco serializzato e inviato con successo.");
-        
-        // CORRETTO: Resettiamo la lista dei giocatori pronti così il server è pronto 
-        // ad accogliere la prossima coppia di sfidanti senza conflitti!
-        giocatoriPronti.clear();
+        System.out.println("[SERVER] PacchettoSfida contestuale inviato in tempo reale.");
     }
     
-    /**
-     * Rimuove in sicurezza un client se si disconnette o chiude l'app prima dell'inizio
-     */
     public synchronized void disconnettiClient(ClientHandler handler) {
         clientConnessi.remove(handler);
         giocatoriPronti.remove(handler);

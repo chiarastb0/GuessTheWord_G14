@@ -42,6 +42,12 @@ public class ClientHandler implements Runnable {
             in = new ObjectInputStream(socket.getInputStream());
             
             Object objRicevuto;
+            
+            // --- INIZIO BYPASS PER IL TEST ---
+            this.usernameUtente = "Tester_" + socket.getPort(); // Assegna un nome finto
+            serverManager.giocatoreAutenticato(this);        // Usa il metodo col nome corretto!
+            // --- FINE BYPASS --
+            
             // Il thread resta confinato in questo ciclo leggendo ogni stringa inviata dal client
             while (inAscolto && (objRicevuto = in.readObject()) != null) {
                 if (objRicevuto instanceof String) {
@@ -63,7 +69,6 @@ public class ClientHandler implements Runnable {
 
     /**
      * Parsing del Protocollo di Rete (Definisce come interpretare le stringhe del client).
-     * Gestisce i comandi separati dal carattere speciale ":" (Es. LOGIN:username:password)
      */
     private void elaboraMessaggio(String messaggio) {
         // Usiamo un limite nello split per non rompere i messaggi contenenti ":"
@@ -74,7 +79,6 @@ public class ClientHandler implements Runnable {
 
         switch (comando) {
             case "LOGIN":
-                // Riespandiamo il resto dei parametri (user e pass)
                 String[] datiLogin = parti[1].split(":");
                 if (datiLogin.length == 2) {
                     String user = datiLogin[0];
@@ -115,7 +119,6 @@ public class ClientHandler implements Runnable {
                 if (parti.length == 2) {
                     String parolaTentata = parti[1];
                     System.out.println("[GIOCO] L'utente " + getUsernameUtente() + " ha tentato: " + parolaTentata);
-                    // QUI in futuro vi collegherete al controllo vincitore del Compagno 3
                 }
                 break;
 
@@ -139,9 +142,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /**
-     * Esegue la verifica delle credenziali interfacciandosi con l'UtenteDAO.
-     */
     private void gestisciLogin(String user, String pass) {
         Optional<Utente> utenteAutenticato = utenteDAO.login(user, pass);
 
@@ -154,7 +154,7 @@ public class ClientHandler implements Runnable {
             
             // Se è un normale giocatore ("PLAYER"), lo registriamo nel ServerManager per il matchmaking
             if (u.getRuolo().equalsIgnoreCase("PLAYER")) {
-                serverManager.giocatoreAutenticato(this);
+                serverManager.giocatoreAutenticato(this); // Nome del metodo corretto!
             } else {
                 System.out.println("[SERVER] L'amministratore '" + usernameUtente + "' si è connesso.");
             }
@@ -163,16 +163,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /**
-     * Interroga il DB e restituisce la stringa formattata della classifica globale.
-     */
     private void gestisciRichiestaClassifica() {
-        // Deve restituire una stringa formattata così: "posizione,username,punti;posizione,username,punti;..."
-        // Esempio: "1,Chiara,500;2,Mario,350;3,Luigi,200"
-        
         try {
             String datiClassifica = utenteDAO.getClassificaGlobaleFormattata(); 
-            
             inviaMessaggio("DATI_CLASSIFICA:" + datiClassifica);
         } catch (Exception e) {
             System.err.println("[SERVER] Errore nel recupero della classifica: " + e.getMessage());
@@ -180,25 +173,13 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /**
-     * Interroga il DB e restituisce la stringa formattata dello storico personale di questo specifico utente.
-     */
     private void gestisciRichiestaStorico() {
-        // Se l'utente non è loggato non può chiedere lo storico
         if (usernameUtente == null) {
             inviaMessaggio("ERRORE: Devi prima effettuare il login.");
             return;
         }
-
         try {
-            // Chiediamo al database lo storico dei match filtrato per l'utente corrente ("this.usernameUtente")
-            // Deve restituire una stringa formattata così: "data,parola,esito,punti;data,parola,esito,punti;..."
-            // Esempio: "2026-06-11,CASA,VINTO,100;2026-06-10,ALBERO,PERSO,0"
-            
-            // Nota di test simulata se il DB non è pronto:
-            // String datiStorico = "11/06/2026,PROGRAMMAZIONE,VINTO,150;10/06/2026,DATABASE,PERSO,0";
             String datiStorico = utenteDAO.getStoricoPartiteFormattato(this.usernameUtente);
-            
             inviaMessaggio("DATI_STORICO:" + datiStorico);
         } catch (Exception e) {
             System.err.println("[SERVER] Errore nel recupero dello storico per " + usernameUtente + ": " + e.getMessage());

@@ -79,6 +79,12 @@ public class ClientConnection implements Runnable {
                 else if (objRicevuto instanceof PacchettoSfida) {
                     PacchettoSfida pacchetto = (PacchettoSfida) objRicevuto;
                     
+                    //TEST RICEZIONE PAcchetto Sfida
+                    System.out.println("==================================================");
+                    System.out.println("[TEST RICEZIONE CLIENT]");
+                    System.out.println("Testo della sfida: " + pacchetto.getParolaCifrata());
+                    System.out.println("==================================================");
+                    
                     if (controllerGioco != null) {
                         Platform.runLater(() -> {
                             controllerGioco.inizializzaPartita(String.valueOf(pacchetto.getDurataTimerSecondi()), pacchetto.getParolaCifrata());
