@@ -37,6 +37,8 @@ public class ClientConnection implements Runnable {
     private ScreenGameController controllerGioco;
     private AuthController controllerAuth;
     private LobbyController controllerLobby;
+    
+    private String cacheStorico = null; // Il nostro cassetto temporaneo
 
     public ClientConnection(String ip, int porta) {
         this.ip = ip;
@@ -86,7 +88,11 @@ public class ClientConnection implements Runnable {
                     System.out.println("Testo della sfida: " + pacchetto.getParolaCifrata());
                     System.out.println("==================================================");
                     
-                    if (controllerLobby != null) {
+                    if (controllerGioco != null) {
+                        // GIOCO IN CORSO: Qualcuno ha indovinato una parola, aggiorniamo solo il testo grafico!
+                        controllerGioco.aggiornaTestoDinamicamente(pacchetto.getParolaCifrata());
+                    }
+                    else if (controllerLobby != null) {
                         // Passiamo i dati direttamente al metodo aggiornato
                         controllerLobby.avviaSchermataGioco(
                             String.valueOf(pacchetto.getDurataTimerSecondi()), 
@@ -182,6 +188,12 @@ public class ClientConnection implements Runnable {
                     }
                 }
                 break;
+            
+            case "NOTIFICA":
+                if(parti.length >= 2 && controllerGioco != null){
+                    controllerGioco.mostraNotifica(parti[1]);
+                }
+                break;
                 
             case "FINE_PARTITA":
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
@@ -220,34 +232,18 @@ public class ClientConnection implements Runnable {
                 break;
 
             case "DATI_STORICO":
-                // Formato atteso dal Server: DATI_STORICO:data,parola,esito,punti;...
-                // BUG FIX: Adesso controlla giustamente il controllerLobby!
-                if (parti.length >= 2 && controllerLobby != null) { 
-                    String contenutoStorico = parti[1];
-                    String[] righeStorico = contenutoStorico.split(";");
-                    
-                    if (contenutoStorico.equalsIgnoreCase("VUOTO")) {
-                        Platform.runLater(() -> {
-                            System.out.println("[LOBBY] L'utente non ha ancora partite registrate.");
-                        });
-                    } else {
-                        Platform.runLater(() -> {
-                            for (String riga : righeStorico) {
-                                if (!riga.trim().isEmpty()) {
-                                    String[] dati = riga.split(",");
-                                    String data = dati[0];
-                                    String parola = dati[1];
-                                    String esito = dati[2];
-                                    int punteggio = Integer.parseInt(dati[3]); // Sarà sempre 0 per ora
-                                
-                                    // Inietta il match giocato nella tabella della Lobby
-                                    controllerLobby.aggiungiPartitaAStorico(data, parola, esito, punteggio);
-                                }
-                            }
-                        });
-                    }
-                }
-                break;
+             if (parti.length >= 2) { 
+                 String contenutoStorico = parti[1];
+
+                 if (controllerLobby != null) {
+                     // Finestra già aperta, stampiamo subito
+                     Platform.runLater(() -> elaboraStoricoGrafica(contenutoStorico));
+                 } else {
+                     // Finestra in caricamento, salviamo i dati in memoria
+                     this.cacheStorico = contenutoStorico;
+                 }
+             }
+             break;
 
             case "ERRORE":
                 System.err.println("[SERVER ERRORE] " + parti[1]);
@@ -278,7 +274,53 @@ public class ClientConnection implements Runnable {
     }
     
     public void setControllerLobby(LobbyController controller) {
-        this.controllerLobby = controller;
+     this.controllerLobby = controller;
+
+     // Appena la Lobby è pronta, controlliamo se c'erano dati in attesa!
+     if (this.cacheStorico != null) {
+         String datiInSospeso = this.cacheStorico;
+         Platform.runLater(() -> elaboraStoricoGrafica(datiInSospeso));
+         this.cacheStorico = null; // Svuotiamo il cassetto
+     }
+    }
+    
+    private void elaboraStoricoGrafica(String contenutoStorico) {
+        if (contenutoStorico.equalsIgnoreCase("VUOTO") || controllerLobby == null) return;
+
+        String[] righeStorico = contenutoStorico.split(";");
+        for (String riga : righeStorico) {
+            if (!riga.trim().isEmpty()) {
+                String[] dati = riga.split(",");
+                
+                // Ci assicuriamo di avere almeno Data, Parola, Esito e Punteggio
+                if (dati.length >= 4) {
+                    String data = dati[0];
+                    String punteggioStr = dati[dati.length - 1]; // L'ultimo elemento è sempre il punteggio
+                    String esito = dati[dati.length - 2];        // Il penultimo è sempre l'esito
+                    
+                    // Tutto ciò che sta in mezzo sono le parole! Le ricostruiamo.
+                    StringBuilder parolaRicostruita = new StringBuilder();
+                    for (int i = 1; i < dati.length - 2; i++) {
+                        parolaRicostruita.append(dati[i]);
+                        // Se ci sono più parole, rimettiamo la virgola per la grafica
+                        if (i < dati.length - 3) {
+                            parolaRicostruita.append(", ");
+                        }
+                    }
+                    
+                    try {
+                        controllerLobby.aggiungiPartitaAStorico(
+                            data, 
+                            parolaRicostruita.toString(), 
+                            esito, 
+                            Integer.parseInt(punteggioStr.trim())
+                        );
+                    } catch (NumberFormatException e) {
+                        System.err.println("[CLIENT] Errore di lettura punteggio nello storico.");
+                    }
+                }
+            }
+        }
     }
     
     /**
@@ -303,5 +345,5 @@ public class ClientConnection implements Runnable {
             System.err.println("[CLIENT] Errore durante la chiusura delle risorse: " + e.getMessage());
         }
     }
-
+    
 } 

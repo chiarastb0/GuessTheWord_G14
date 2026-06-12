@@ -107,4 +107,28 @@ public class ScreenGameController implements Initializable {
             alert.showAndWait();
         });
     }
+    
+    /**
+     * Aggiorna la casella di testo in tempo reale quando una parola viene svelata
+     */
+    public void aggiornaTestoDinamicamente(String nuovoTesto) {
+        javafx.application.Platform.runLater(() -> {
+            txtAreaSfida.setText(nuovoTesto);
+            // Svuota la casella di input per prepararsi alla prossima parola
+            txtRisposta.clear(); 
+        });
+    }
+
+    /**
+     * Mostra un popup rapido (non bloccante) per informare sui progressi
+     */
+    public void mostraNotifica(String messaggio) {
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("Aggiornamento Partita");
+            alert.setHeaderText(null);
+            alert.setContentText(messaggio);
+            alert.show(); // Usiamo show() invece di showAndWait() per non bloccare il timer!
+        });
+    }
 }
