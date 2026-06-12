@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="450.0" prefWidth="400.0" style="-fx-background-color: #0F172A;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_server.controller.ServerLoginController">
+   <children>
+      <VBox alignment="CENTER" spacing="20.0" style="-fx-background-color: #1E293B; -fx-background-radius: 12; -fx-border-color: #334155; -fx-border-radius: 12;" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
+         <children>
+            <VBox alignment="CENTER" spacing="4.0">
+               <children>
+                  <Label text="Guess The Word" textFill="#38BDF8">
+                     <font>
+                        <Font name="System Bold" size="26.0" />
+                     </font>
+                  </Label>
+                  <Label text="Pannello di Controllo Amministratore" textFill="#94A3B8">
+                     <font>
+                        <Font size="12.0" />
+                     </font>
+                  </Label>
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </VBox>
+            
+            <VBox alignment="CENTER_LEFT" spacing="6.0">
+               <children>
+                  <Label text="Admin Username" textFill="#E2E8F0">
+                     <font>
+                        <Font name="System Bold" size="12.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="txtAdminUser" promptText="Inserisci username admin" style="-fx-background-color: #0F172A; -fx-text-fill: white; -fx-border-color: #475569; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+               </children>
+               <VBox.margin>
+                  <Insets left="20.0" right="20.0" />
+               </VBox.margin>
+            </VBox>
+            
+            <VBox alignment="CENTER_LEFT" spacing="6.0">
+               <children>
+                  <Label text="Admin Password" textFill="#E2E8F0">
+                     <font>
+                        <Font name="System Bold" size="12.0" />
+                     </font>
+                  </Label>
+                  <PasswordField fx:id="txtAdminPass" promptText="Inserisci password admin" style="-fx-background-color: #0F172A; -fx-text-fill: white; -fx-border-color: #475569; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8;" />
+               </children>
+               <VBox.margin>
+                  <Insets left="20.0" right="20.0" />
+               </VBox.margin>
+            </VBox>
+            
+            <Label fx:id="lblErroreAdmin" alignment="CENTER" textFill="#F43F5E" wrapText="true">
+               <font>
+                  <Font name="System Italic" size="12.0" />
+               </font>
+            </Label>
+            
+            <Button maxWidth="1.0E308" mnemonicParsing="false" onAction="#gestisciLoginAdmin" style="-fx-background-color: #0284C7; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 10;" text="Accedi al Server">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+               <VBox.margin>
+                  <Insets left="20.0" right="20.0" top="10.0" />
+               </VBox.margin>
+            </Button>
+         </children>
+         <padding>
+            <Insets bottom="20.0" top="20.0" />
+         </padding>
+      </VBox>
+   </children>
+</AnchorPane>
