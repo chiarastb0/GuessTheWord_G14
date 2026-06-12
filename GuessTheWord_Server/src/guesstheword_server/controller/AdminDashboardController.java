@@ -35,6 +35,7 @@ public class AdminDashboardController {
     @FXML private TableColumn<Map.Entry<String, Long>, String> colonnaParola;
     @FXML private TableColumn<Map.Entry<String, Long>, Long> colonnaFrequenza;
     @FXML private ComboBox<String> comboStoricoFile;
+    @FXML private ComboBox<String> comboDifficolta;
     
     private final File cartellaStorico = new File("storico_dizionari");
     private File ultimoFileCaricato;
@@ -48,6 +49,20 @@ public class AdminDashboardController {
         colonnaParola.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getKey()));
         colonnaFrequenza.setCellValueFactory(cellData -> new SimpleLongProperty(cellData.getValue().getValue()).asObject());
         caricaStatisticheDatabase();
+        
+        // Popoliamo il menu della difficoltà e impostiamo "Facile" come predefinito
+        if (comboDifficolta != null) {
+            comboDifficolta.getItems().addAll("Facile", "Media", "Difficile");
+            comboDifficolta.setValue("Facile");
+        
+            // Questo "Listener" scatta automaticamente ogni volta che clicchi un'opzione diversa!
+            comboDifficolta.valueProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue != null && serverManager != null) {
+                    serverManager.setDifficoltaCorrente(newValue);
+                    System.out.println(">>> DIFFICOLTÀ AGGIORNATA IN CORSA A: " + newValue);
+                }
+            });
+        }
 
         if (!cartellaStorico.exists()) {
             cartellaStorico.mkdir();
@@ -133,8 +148,11 @@ public class AdminDashboardController {
                 for (java.util.Map.Entry<String, Long> entry : tabellaParole.getItems()) {
                     mappaCorrente.put(entry.getKey(), entry.getValue());
                 }
-                // Usiamo il metodo aggiornato con la firma corretta!
                 serverManager.setDatiSfida(mappaCorrente, testoIntegraleCorrente);
+            }
+            
+            if (comboDifficolta != null && comboDifficolta.getValue() != null) {
+                serverManager.setDifficoltaCorrente(comboDifficolta.getValue());
             }
             
             Thread serverThread = new Thread(() -> {

@@ -1,39 +1,26 @@
 package guesstheword_server.model;
 
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 /**
  *
  * @author angel
  */
+
 import java.io.Serializable;
 
-/**
- * Rappresenta i dati della sfida inviati dal Server al Client.
- * Implementa Serializable per poter essere trasmesso sui Socket.
- */
 public class PacchettoSfida implements Serializable {
-    
-    // Questo ID è il "timbro" di conformità. Server e Client devono avere 
-    // lo stesso ID per questo oggetto, altrimenti la ricezione fallisce.
     private static final long serialVersionUID = 1L;
-
-    private String parolaCifrata;
+    
+    private String parolaCifrata; // È il testo completo con le parole cifrate
     private int durataTimerSecondi;
-
-    public PacchettoSfida(String parolaCifrata, int durataTimerSecondi) {
+    private String difficolta;    // NUOVO CAMPO per far visualizzare la diff. sul client
+    
+    public PacchettoSfida(String parolaCifrata, int durataTimerSecondi, String difficolta) {
         this.parolaCifrata = parolaCifrata;
         this.durataTimerSecondi = durataTimerSecondi;
+        this.difficolta = difficolta;
     }
 
-    public String getParolaCifrata() {
-        return parolaCifrata;
-    }
-
-    public int getDurataTimerSecondi() {
-        return durataTimerSecondi;
-    }
+    public String getParolaCifrata() { return parolaCifrata; }
+    public int getDurataTimerSecondi() { return durataTimerSecondi; }
+    public String getDifficolta() { return difficolta; }
 }

@@ -57,12 +57,13 @@ public class PartitaDAO implements DAO<Partita> {
 
     @Override
     public void insert(Partita t) {
-        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta) VALUES (?,?)";
+        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta,difficolta) VALUES (?,?,?)";
         try(Connection conn = DatabaseManager.getConnection();
             PreparedStatement pst = conn.prepareStatement(sql)){
             
             pst.setString(1, t.getDataOra());
             pst.setString(2, t.getParolaNascosta());
+            pst.setString(3, t.getDifficolta()); 
             pst.executeUpdate();
             
             System.out.println("Partita inserita con successo.");
@@ -74,24 +75,22 @@ public class PartitaDAO implements DAO<Partita> {
     
     // Nuovo metodo per salvare e farsi restituire l'ID generato dal Database
     public long inserisciERestituisciId(Partita t) {
-        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta) VALUES (?,?)";
+        String sql = "INSERT INTO PARTITA (data_ora, parola_nascosta, difficolta) VALUES (?,?,?)";
         
         try (Connection conn = DatabaseManager.getConnection();
-             // RIMOSSO Statement.RETURN_GENERATED_KEYS: SQLite lo gestisce in automatico!
              PreparedStatement pst = conn.prepareStatement(sql)) {
             
             pst.setString(1, t.getDataOra());
             pst.setString(2, t.getParolaNascosta());
+            pst.setString(3, t.getDifficolta()); 
             pst.executeUpdate();
             
-            // Possiamo chiamare getGeneratedKeys() direttamente dopo l'esecuzione
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     return generatedKeys.getLong(1); 
                 }
             }
         } catch (SQLException e) {
-            // Stampiamo il vero messaggio di errore di SQLite per facilitare il debug
             System.err.println("[ERRORE SQLITE DETTAGLIATO]: " + e.getMessage());
             throw new DBException("Errore durante la insert con ID (Partita)", e);
         }
@@ -136,8 +135,9 @@ public class PartitaDAO implements DAO<Partita> {
         long  idPartita = rs.getLong("id_partita");
         String dataOra = rs.getString("data_ora");
         String parolaNascosta = rs.getString("parola_nascosta"); 
+        String difficolta = rs.getString("difficolta"); 
         
-        return new Partita(idPartita, dataOra, parolaNascosta);
+        return new Partita(idPartita, dataOra, parolaNascosta, difficolta);
     }
     
     // Calcola il numero totale di partite disputate sul server (Per Schermata Admin)

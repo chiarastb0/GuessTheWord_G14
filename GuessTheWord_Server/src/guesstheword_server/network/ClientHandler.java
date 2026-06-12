@@ -121,7 +121,7 @@ public class ClientHandler implements Runnable {
         
                 // Spostiamo qui la registrazione per il matchmaking!
                 if (this.usernameUtente != null) {
-                    serverManager.giocatoreAutenticato(this);
+                    serverManager.aggiungiGiocatorePronto(this);
                 } else {
                     inviaMessaggio("ERRORE: Utente non autenticato.");
                 }
