@@ -116,6 +116,17 @@ public class ClientHandler implements Runnable {
                 }
                 break;
                 
+            case "AVVIA_SFIDA":
+                System.out.println("[CODA] L'utente " + getUsernameUtente() + " ha richiesto di avviare una sfida dalla Lobby.");
+        
+                // Spostiamo qui la registrazione per il matchmaking!
+                if (this.usernameUtente != null) {
+                    serverManager.giocatoreAutenticato(this);
+                } else {
+                    inviaMessaggio("ERRORE: Utente non autenticato.");
+                }
+                break;
+                
             case "RISPOSTA":
                 if (parti.length == 2) {
                     String parolaTentata = parti[1];
@@ -156,7 +167,7 @@ public class ClientHandler implements Runnable {
             
             // Se è un normale giocatore ("PLAYER"), lo registriamo nel ServerManager per il matchmaking
             if (u.getRuolo().equalsIgnoreCase("PLAYER")) {
-                serverManager.giocatoreAutenticato(this); // Nome del metodo corretto!
+                System.out.println("[SERVER] Il giocatore '" + usernameUtente + "' è entrato nella Lobby di attesa.");
             } else {
                 System.out.println("[SERVER] L'amministratore '" + usernameUtente + "' si è connesso.");
             }
@@ -168,7 +179,16 @@ public class ClientHandler implements Runnable {
     private void gestisciRichiestaClassifica() {
         try {
             String datiClassifica = utenteDAO.getClassificaGlobaleFormattata(); 
-            inviaMessaggio("DATI_CLASSIFICA:" + datiClassifica);
+        
+            // Controlliamo se la classifica restituita dal DAO è null o vuota
+            if (datiClassifica == null || datiClassifica.trim().isEmpty()) {
+                System.out.println("[SERVER] Classifica globale ancora vuota.");
+                // Inviamo un messaggio specifico di classifica vuota al client
+                inviaMessaggio("DATI_CLASSIFICA:VUOTO");
+            } else {
+                // Se ci sono dati, li inviamo normalmente
+                inviaMessaggio("DATI_CLASSIFICA:" + datiClassifica);
+            }
         } catch (Exception e) {
             System.err.println("[SERVER] Errore nel recupero della classifica: " + e.getMessage());
             inviaMessaggio("ERRORE: Impossibile recuperare la classifica.");
@@ -176,13 +196,17 @@ public class ClientHandler implements Runnable {
     }
 
     private void gestisciRichiestaStorico() {
-        if (usernameUtente == null) {
-            inviaMessaggio("ERRORE: Devi prima effettuare il login.");
-            return;
-        }
         try {
-            String datiStorico = utenteDAO.getStoricoPartiteFormattato(this.usernameUtente);
-            inviaMessaggio("DATI_STORICO:" + datiStorico);
+                String datiStorico = utenteDAO.getStoricoPartiteFormattato(this.usernameUtente);
+                // Controlliamo se il DAO ha restituito null o una stringa vuota
+                if (datiStorico == null || datiStorico.trim().isEmpty()) {
+                    System.out.println("[SERVER] Storico vuoto per l'utente: " + usernameUtente);
+                    // Inviamo un messaggio specifico di storico vuoto al client
+                    inviaMessaggio("DATI_STORICO:VUOTO");
+                } else {
+                    // Se ci sono dati, li inviamo normalmente
+                    inviaMessaggio("DATI_STORICO:" + datiStorico);
+                }
         } catch (Exception e) {
             System.err.println("[SERVER] Errore nel recupero dello storico per " + usernameUtente + ": " + e.getMessage());
             inviaMessaggio("ERRORE: Impossibile recuperare lo storico partite.");
