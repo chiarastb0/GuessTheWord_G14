@@ -81,24 +81,17 @@ public class ClientConnection implements Runnable {
                 else if (objRicevuto instanceof PacchettoSfida) {
                     PacchettoSfida pacchetto = (PacchettoSfida) objRicevuto;
                     
-                    //TEST RICEZIONE PAcchetto Sfida
                     System.out.println("==================================================");
                     System.out.println("[TEST RICEZIONE CLIENT]");
                     System.out.println("Testo della sfida: " + pacchetto.getParolaCifrata());
                     System.out.println("==================================================");
                     
                     if (controllerLobby != null) {
-                        Platform.runLater(() -> {
-                        controllerLobby.avviaSchermataGioco(); // Carica ScreenGameView
-            
-                            // Passiamo i dati al controller di gioco appena svegliato
-                        if (controllerGioco != null) {
-                            controllerGioco.inizializzaPartita(
+                        // Passiamo i dati direttamente al metodo aggiornato
+                        controllerLobby.avviaSchermataGioco(
                             String.valueOf(pacchetto.getDurataTimerSecondi()), 
                             pacchetto.getParolaCifrata()
                         );
-                        }
-                        });
                     }
                 }
             }
@@ -178,28 +171,18 @@ public class ClientConnection implements Runnable {
                 break;
 
             case "START_GAME":
-            // 1. Separiamo il tempo dal testo cifrato
-            String[] sottoParti = parti[1].split(":", 2);
-            if (sottoParti.length >= 2) {
-                String tempoInSecondi = sottoParti[0];
-                String testoCifrato = sottoParti[1];
+                String[] sottoParti = parti[1].split(":", 2);
+                if (sottoParti.length >= 2) {
+                    String tempoInSecondi = sottoParti[0];
+                    String testoCifrato = sottoParti[1];
 
-                // 2. Controlliamo se siamo nella lobby di attesa
-            if (controllerLobby != null) {
-                Platform.runLater(() -> {
-                // Ordiniamo alla lobby di caricare la schermata di gioco
-                controllerLobby.avviaSchermataGioco();
-                
-                // 3. Ora che la scena è cambiata, recuperiamo il nuovo controller di gioco 
-                // appena agganciato e gli passiamo i dati inviati dal server
-                if (controllerGioco != null) {
-                    controllerGioco.inizializzaPartita(tempoInSecondi, testoCifrato);
+                    if (controllerLobby != null) {
+                        // Passiamo i dati direttamente al metodo aggiornato
+                        controllerLobby.avviaSchermataGioco(tempoInSecondi, testoCifrato);
+                    }
                 }
-                });
-              }
-            }
-            break;
-            
+                break;
+                
             case "FINE_PARTITA":
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
                 if (controllerGioco != null) {
@@ -237,29 +220,27 @@ public class ClientConnection implements Runnable {
                 break;
 
             case "DATI_STORICO":
-                // Formato atteso dal Server: DATI_STORICO:data,parola,esito,punti;data,parola,esito,punti;...
-                if (parti.length >= 2 && controllerGioco != null) {
+                // Formato atteso dal Server: DATI_STORICO:data,parola,esito,punti;...
+                // BUG FIX: Adesso controlla giustamente il controllerLobby!
+                if (parti.length >= 2 && controllerLobby != null) { 
                     String contenutoStorico = parti[1];
                     String[] righeStorico = contenutoStorico.split(";");
+                    
                     if (contenutoStorico.equalsIgnoreCase("VUOTO")) {
                         Platform.runLater(() -> {
-                        // Se hai un metodo per svuotare lo storico nel controller usalo, 
-                        // altrimenti lascia semplicemente la tabella pulita.
-                        System.out.println("[LOBBY] L'utente non ha ancora partite registrate.");
-                    });
+                            System.out.println("[LOBBY] L'utente non ha ancora partite registrate.");
+                        });
                     } else {
                         Platform.runLater(() -> {
-                        // Nota: Lo storico di solito mostra i dati cumulativi, non serve svuotarlo 
-                        // a meno che non si voglia ricaricare completamente da zero la lista.
                             for (String riga : righeStorico) {
                                 if (!riga.trim().isEmpty()) {
                                     String[] dati = riga.split(",");
                                     String data = dati[0];
                                     String parola = dati[1];
                                     String esito = dati[2];
-                                    int punteggio = Integer.parseInt(dati[3]);
+                                    int punteggio = Integer.parseInt(dati[3]); // Sarà sempre 0 per ora
                                 
-                                    // Inietta il match giocato nella tabella dello Storico personale
+                                    // Inietta il match giocato nella tabella della Lobby
                                     controllerLobby.aggiungiPartitaAStorico(data, parola, esito, punteggio);
                                 }
                             }

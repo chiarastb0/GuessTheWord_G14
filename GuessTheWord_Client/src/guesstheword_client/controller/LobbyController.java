@@ -93,10 +93,9 @@ public class LobbyController implements Initializable {
     }
 
     /**
-     * Chiamato da ClientConnection quando il server risponde che è stato trovato un avversario
-     * e la sfida ha effettivamente inizio.
+     * Chiamato da ClientConnection, carica la scena e inietta i dati istantaneamente.
      */
-    public void avviaSchermataGioco() {
+    public void avviaSchermataGioco(String tempo, String testoCifrato) {
         Platform.runLater(() -> {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/ScreenGameView.fxml"));
@@ -104,11 +103,14 @@ public class LobbyController implements Initializable {
 
                 ScreenGameController controllerGioco = loader.getController();
                 
-                // Passiamo la connessione attiva e aggiorniamo il riferimento di ascolto rete
+                // 1. Passiamo la connessione attiva
                 controllerGioco.setClientConnection(clientConnection);
                 clientConnection.setControllerGioco(controllerGioco);
 
-                // Effettuiamo il cambio scena
+                // 2. INIETTIAMO I DATI PRIMA DI MOSTRARE LA SCENA!
+                controllerGioco.inizializzaPartita(tempo, testoCifrato);
+
+                // 3. Effettuiamo il cambio scena
                 Stage stage = (Stage) btnAvviaSfida.getScene().getWindow();
                 Scene scenaGioco = new Scene(giocoRoot);
                 stage.setScene(scenaGioco);
