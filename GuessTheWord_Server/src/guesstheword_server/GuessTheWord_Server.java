@@ -22,7 +22,7 @@ public class GuessTheWord_Server extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/guesstheword_server/controller/AdminDashboard.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/guesstheword_server/view/AdminDashboard.fxml"));
         
         Scene scene = new Scene(root);
         

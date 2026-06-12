@@ -196,23 +196,22 @@ public class ClientHandler implements Runnable {
     }
 
     private void gestisciRichiestaStorico() {
+        if (usernameUtente == null) {
+            inviaMessaggio("ERRORE: Devi prima effettuare il login.");
+            return;
+        }
+
         try {
-                String datiStorico = utenteDAO.getStoricoPartiteFormattato(this.usernameUtente);
-                // Controlliamo se il DAO ha restituito null o una stringa vuota
-                if (datiStorico == null || datiStorico.trim().isEmpty()) {
-                    System.out.println("[SERVER] Storico vuoto per l'utente: " + usernameUtente);
-                    // Inviamo un messaggio specifico di storico vuoto al client
-                    inviaMessaggio("DATI_STORICO:VUOTO");
-                } else {
-                    // Se ci sono dati, li inviamo normalmente
-                    inviaMessaggio("DATI_STORICO:" + datiStorico);
-                }
+            // Usiamo il RisultatoDAO per interrogare il DB usando il VERO id dell'utente connesso
+            guesstheword_server.db.RisultatoDAO risultatoDAO = new guesstheword_server.db.RisultatoDAO();
+            String datiStorico = risultatoDAO.getStoricoFormattato(this.idUtente);
+            
+            inviaMessaggio("DATI_STORICO:" + datiStorico);
         } catch (Exception e) {
             System.err.println("[SERVER] Errore nel recupero dello storico per " + usernameUtente + ": " + e.getMessage());
             inviaMessaggio("ERRORE: Impossibile recuperare lo storico partite.");
         }
     }
-
     public void inviaMessaggio(String messaggio) {
         try {
             if (out != null) {

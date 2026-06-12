@@ -165,4 +165,42 @@ public class RisultatoDAO implements DAO<Risultato>{
         return media;
     }
     
+    // Recupera lo storico formattato facendo una JOIN tra RISULTATO e PARTITA
+    public String getStoricoFormattato(long idUtente) {
+        StringBuilder sb = new StringBuilder();
+        // Prende data e parola dalla Partita, l'esito dal Risultato. Ordina dalla più recente.
+        String sql = "SELECT p.data_ora, p.parola_nascosta, r.esito " +
+                     "FROM RISULTATO r " +
+                     "JOIN PARTITA p ON r.id_partita = p.id_partita " +
+                     "WHERE r.id_utente = ? " +
+                     "ORDER BY p.data_ora DESC";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, idUtente);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean hasData = false;
+                while (rs.next()) {
+                    hasData = true;
+                    String data = rs.getString("data_ora");
+                    String parola = rs.getString("parola_nascosta");
+                    String esito = rs.getString("esito");
+                    int punteggio = 0; // Tralasciamo il punteggio per ora! Mettiamo 0.
+
+                    // Componiamo la stringa: "data,parola,esito,0;"
+                    sb.append(data).append(",").append(parola).append(",").append(esito).append(",").append(punteggio).append(";");
+                }
+                if (!hasData) {
+                    return "VUOTO";
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Errore query storico: " + e.getMessage());
+            return "VUOTO";
+        }
+        return sb.toString();
+    }
+    
 }
