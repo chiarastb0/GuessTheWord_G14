@@ -126,11 +126,7 @@ public class AuthController implements Initializable {
             
             controllerLobby.setClientConnection(connessione);
         // 2. Recupera il controller della schermata di gioco
-            ScreenGameController controllerGioco = loader.getController();
-        
-        // 3. Sincronizza i riferimenti incrociati (Fondamentale!)
-        // Assegna la connessione di rete al controller di gioco
-            controllerGioco.setClientConnection(connessione);
+             
         // Aggiorna il riferimento del controller dentro ClientConnection 
         // in modo che i messaggi successivi (es. START_GAME, CLASSIFICA) vadano alla nuova schermata
             connessione.setControllerLobby(controllerLobby);

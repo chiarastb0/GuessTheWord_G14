@@ -213,10 +213,13 @@ public class ClientConnection implements Runnable {
                 if (parti.length >= 2 && controllerGioco != null) {
                     String contenuto = parti[1];
                     String[] righeGiocatori = contenuto.split(";");
-
-                    // Usiamo Platform.runLater per aggiornare in sicurezza la TableView
-                    Platform.runLater(() -> {
-                        controllerGioco.svuotaClassifica(); // Resetta i vecchi dati
+                        if (contenuto.equalsIgnoreCase("VUOTO")) {
+                            Platform.runLater(() -> {
+                            System.out.println("[LOBBY] Nessun utente è ancora presente in classifica.");
+                        });
+                        } else {
+                        // Usiamo Platform.runLater per aggiornare in sicurezza la TableView
+                        Platform.runLater(() -> {
                         for (String riga : righeGiocatori) {
                             if (!riga.trim().isEmpty()) {
                                 String[] dati = riga.split(",");
@@ -225,10 +228,11 @@ public class ClientConnection implements Runnable {
                                 int punti = Integer.parseInt(dati[2]);
                                 
                                 // Inietta la riga nel controller
-                                controllerGioco.aggiungiGiocatoreAClassifica(pos, username, punti);
+                                controllerLobby.aggiungiGiocatoreAClassifica(pos, username, punti);
                             }
                         }
                     });
+                }
                 }
                 break;
 
@@ -237,23 +241,30 @@ public class ClientConnection implements Runnable {
                 if (parti.length >= 2 && controllerGioco != null) {
                     String contenutoStorico = parti[1];
                     String[] righeStorico = contenutoStorico.split(";");
-
-                    Platform.runLater(() -> {
+                    if (contenutoStorico.equalsIgnoreCase("VUOTO")) {
+                        Platform.runLater(() -> {
+                        // Se hai un metodo per svuotare lo storico nel controller usalo, 
+                        // altrimenti lascia semplicemente la tabella pulita.
+                        System.out.println("[LOBBY] L'utente non ha ancora partite registrate.");
+                    });
+                    } else {
+                        Platform.runLater(() -> {
                         // Nota: Lo storico di solito mostra i dati cumulativi, non serve svuotarlo 
                         // a meno che non si voglia ricaricare completamente da zero la lista.
-                        for (String riga : righeStorico) {
-                            if (!riga.trim().isEmpty()) {
-                                String[] dati = riga.split(",");
-                                String data = dati[0];
-                                String parola = dati[1];
-                                String esito = dati[2];
-                                int punteggio = Integer.parseInt(dati[3]);
+                            for (String riga : righeStorico) {
+                                if (!riga.trim().isEmpty()) {
+                                    String[] dati = riga.split(",");
+                                    String data = dati[0];
+                                    String parola = dati[1];
+                                    String esito = dati[2];
+                                    int punteggio = Integer.parseInt(dati[3]);
                                 
-                                // Inietta il match giocato nella tabella dello Storico personale
-                                controllerGioco.aggiungiPartitaAStorico(data, parola, esito, punteggio);
+                                    // Inietta il match giocato nella tabella dello Storico personale
+                                    controllerLobby.aggiungiPartitaAStorico(data, parola, esito, punteggio);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
                 break;
 
