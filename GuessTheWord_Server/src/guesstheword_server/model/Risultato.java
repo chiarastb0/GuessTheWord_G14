@@ -14,20 +14,23 @@ public class Risultato {
     private long idUtente;   
     private String esito;
     private int tempoRispostaMs;
+    private int punteggio;
     
-    public Risultato(long idRisultato, long idPartita, long idUtente, String esito, int tempoRispostaMs) {
+    public Risultato(long idRisultato, long idPartita, long idUtente, String esito, int tempoRispostaMs, int punteggio) {
         this.idRisultato = idRisultato;
         this.idPartita = idPartita;
         this.idUtente = idUtente;
         this.esito = esito;
         this.tempoRispostaMs = tempoRispostaMs;
+        this.punteggio=punteggio;
     }
 
-    public Risultato(long idPartita, long idUtente, String esito, int tempoRispostaMs) {
+    public Risultato(long idPartita, long idUtente, String esito, int tempoRispostaMs, int punteggio) {
         this.idPartita = idPartita;
         this.idUtente = idUtente;
         this.esito = esito;
         this.tempoRispostaMs = tempoRispostaMs;
+        this.punteggio=punteggio;
     }
 
     public long getIdRisultato() {
@@ -68,6 +71,14 @@ public class Risultato {
 
     public void setTempoRispostaMs(int tempoRispostaMs) {
         this.tempoRispostaMs = tempoRispostaMs;
+    }
+    
+    public int getPunteggio() {
+        return punteggio;
+    }
+
+    public void setPunteggio(int punteggio) {
+        this.punteggio = punteggio;
     }
 
     @Override

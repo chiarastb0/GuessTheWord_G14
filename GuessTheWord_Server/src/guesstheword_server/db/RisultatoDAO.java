@@ -57,7 +57,7 @@ public class RisultatoDAO implements DAO<Risultato>{
     
     @Override
     public void insert(Risultato r) {
-        String sql = "INSERT INTO RISULTATO (id_partita, id_utente, esito, tempo_risposta_ms) VALUES (?,?, ?, ?)";
+        String sql = "INSERT INTO RISULTATO (id_partita, id_utente, esito, tempo_risposta_ms,punteggio) VALUES (?,?,?,?,?)";
         try(Connection conn = DatabaseManager.getConnection();
             PreparedStatement cmd = conn.prepareStatement(sql)){
             
@@ -65,6 +65,7 @@ public class RisultatoDAO implements DAO<Risultato>{
             cmd.setLong(2, r.getIdUtente());
             cmd.setString(3, r.getEsito());
             cmd.setInt(4, r.getTempoRispostaMs());
+            cmd.setInt(5, r.getPunteggio());
             
             cmd.executeUpdate();
             
@@ -139,8 +140,9 @@ public class RisultatoDAO implements DAO<Risultato>{
         long idUtente = rs.getLong("id_utente");
         String esito = rs.getString("esito");
         int tempoRispostaMs = rs.getInt("tempo_risposta_ms");
+        int punteggio = rs.getInt("punteggio");
         
-        return new Risultato(idRisultato, idPartita, idUtente, esito, tempoRispostaMs);
+        return new Risultato(idRisultato, idPartita, idUtente, esito, tempoRispostaMs, punteggio);
     }
     
     // Calcola il tempo medio di risposta per un singolo giocatore
@@ -169,12 +171,12 @@ public class RisultatoDAO implements DAO<Risultato>{
     public String getStoricoFormattato(long idUtente) {
         StringBuilder sb = new StringBuilder();
         // Prende data e parola dalla Partita, l'esito dal Risultato. Ordina dalla più recente.
-        String sql = "SELECT p.data_ora, p.parola_nascosta, r.esito " +
-                     "FROM RISULTATO r " +
-                     "JOIN PARTITA p ON r.id_partita = p.id_partita " +
-                     "WHERE r.id_utente = ? " +
-                     "ORDER BY p.data_ora DESC";
-
+        String sql = "SELECT PARTITA.data_ora, PARTITA.parola_nascosta, RISULTATO.esito, RISULTATO.punteggio " +
+                     "FROM RISULTATO " +
+                     "JOIN PARTITA ON RISULTATO.id_partita = PARTITA.id_partita " +
+                     "WHERE RISULTATO.id_utente = ? " +
+                     "ORDER BY PARTITA.data_ora DESC";
+        
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -187,7 +189,7 @@ public class RisultatoDAO implements DAO<Risultato>{
                     String data = rs.getString("data_ora");
                     String parola = rs.getString("parola_nascosta");
                     String esito = rs.getString("esito");
-                    int punteggio = 0; // Tralasciamo il punteggio per ora! Mettiamo 0.
+                    int punteggio = rs.getInt("punteggio");
 
                     // Componiamo la stringa: "data,parola,esito,0;"
                     sb.append(data).append(",").append(parola).append(",").append(esito).append(",").append(punteggio).append(";");

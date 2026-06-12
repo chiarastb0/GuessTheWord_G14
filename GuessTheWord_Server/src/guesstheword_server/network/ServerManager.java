@@ -313,21 +313,33 @@ public class ServerManager {
             
             long idPartita = partitaDAO.inserisciERestituisciId(nuovaPartita);
             if (idPartita == -1) return;
+            
+            // moltiplicatore di difficoltà per calcolo punteggio
+            int moltiplicatore = 1;
+            if(this.difficoltaCorrente.equalsIgnoreCase("Media")) 
+                moltiplicatore = 2;
+            else if (this.difficoltaCorrente.equalsIgnoreCase("Difficile"))
+                moltiplicatore = 3;
 
             for (ClientHandler giocatore : giocatoriPronti) {
                 String esito = "PAREGGIO";
                 int tempoGiocatore = DURATA_TIMER * 1000; 
+                int puntiAssegnati = 0; //punti di default!
 
                 if (vincitore != null) {
                     if (giocatore == vincitore) {
                         esito = "VITTORIA";
                         tempoGiocatore = (int)(System.currentTimeMillis() - timestampInizioSfida); 
+                        
+                        // Formula per il punteggio
+                        int tempoTrascorsoSec = tempoGiocatore / 1000;
+                        puntiAssegnati = (DURATA_TIMER - tempoTrascorsoSec) * moltiplicatore;
                     } else {
                         esito = "SCONFITTA";
                     }
                 }
 
-                Risultato r = new Risultato(idPartita, giocatore.getIdUtente(), esito, tempoGiocatore);
+                Risultato r = new Risultato(idPartita, giocatore.getIdUtente(), esito, tempoGiocatore, puntiAssegnati);
                 risultatoDAO.insert(r);
             }
             System.out.println("[SERVER DB] Record salvati correttamente con difficoltà: " + difficoltaCorrente);
