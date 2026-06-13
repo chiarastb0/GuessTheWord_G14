@@ -18,7 +18,7 @@
    <center>
       <TabPane tabClosingPolicy="UNAVAILABLE">
         <tabs>
-          <Tab text="🎮 Gestione Sfide">
+          <Tab text="Gestione Sfide">
                <content>
                   <HBox spacing="20.0">
                      <padding><Insets bottom="20.0" left="20.0" right="20.0" top="20.0" /></padding>
@@ -28,7 +28,7 @@
                               <Label text="Stato Server" textFill="#1a4261">
                                  <font><Font name="System Bold" size="18.0" /></font>
                               </Label>
-                              <Label fx:id="lblServerStatus" text="🔴 Disconnesso" textFill="#a43737">
+                              <Label fx:id="lblServerStatus" text="Disconnesso" textFill="#a43737">
                                  <font><Font size="14.0" /></font>
                               </Label>
                               <VBox spacing="5.0">
@@ -70,7 +70,7 @@
                </content>
           </Tab>
           
-          <Tab text="📊 Analisi &amp; Statistiche" onSelectionChanged="#aggiornaStatisticheClick">
+          <Tab text="Analisi &amp; Statistiche" onSelectionChanged="#aggiornaStatisticheClick">
                <content>
                   <VBox spacing="20.0">
                      <padding><Insets bottom="20.0" left="20.0" right="20.0" top="20.0" /></padding>
@@ -91,7 +91,7 @@
                            <children>
                               <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15;" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="🏆 Vittorie per Utente" textFill="#1a4261">
+                                    <Label text="Vittorie per Utente" textFill="#1a4261">
                                        <font><Font name="System Bold" size="16.0" /></font>
                                     </Label>
                                     <TableView fx:id="tabellaVittorie" VBox.vgrow="ALWAYS">
@@ -104,7 +104,7 @@
                               </VBox>
                               <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15;" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="⏱️ Tempo Medio di Risposta" textFill="#1a4261">
+                                    <Label text="Tempo Medio di Risposta" textFill="#1a4261">
                                        <font><Font name="System Bold" size="16.0" /></font>
                                     </Label>
                                     <TableView fx:id="tabellaTempi" VBox.vgrow="ALWAYS">

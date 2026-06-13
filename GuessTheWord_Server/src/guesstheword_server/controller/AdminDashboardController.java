@@ -192,7 +192,7 @@ public class AdminDashboardController {
             serverThread.setDaemon(true); 
             serverThread.start();
 
-            lblServerStatus.setText("🟢 In Ascolto...");
+            lblServerStatus.setText("In Ascolto...");
             lblServerStatus.setTextFill(javafx.scene.paint.Color.GREEN);
             btnStartServer.setDisable(true); 
         }
