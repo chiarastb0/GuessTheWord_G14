@@ -1,99 +1,127 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ProgressBar?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.control.ComboBox?>
 
-<BorderPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #E3F2FD;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_server.controller.AdminDashboardController">
+<BorderPane prefHeight="700.0" prefWidth="900.0" style="-fx-background-color: #E3F2FD;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_server.controller.AdminDashboardController">
    <top>
       <HBox alignment="CENTER" prefHeight="80.0" style="-fx-background-color: #1a4261;">
          <children>
             <Label text=" Server Command Center" textFill="WHITE">
-               <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
+               <font><Font name="System Bold" size="24.0" /></font>
             </Label>
          </children>
       </HBox>
    </top>
    <center>
-      <HBox spacing="20.0" BorderPane.alignment="CENTER">
-         <padding>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-         </padding>
-         <children>
-            <VBox prefWidth="350.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;">
-               <children>
-                  <Label text="Stato Server" textFill="#1a4261">
-                     <font><Font name="System Bold" size="18.0" /></font>
-                  </Label>
-                  <Label fx:id="lblServerStatus" text="🔴 Disconnesso" textFill="#a43737">
-                     <font><Font size="14.0" /></font>
-                  </Label>
-                  
-                  <VBox spacing="5.0">
+      <TabPane tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab text="🎮 Gestione Sfide">
+               <content>
+                  <HBox spacing="20.0">
+                     <padding><Insets bottom="20.0" left="20.0" right="20.0" top="20.0" /></padding>
                      <children>
-                         <Label text="Seleziona Difficoltà:" textFill="#1a4261">
-                             <font><Font name="System Bold" size="14.0" /></font>
-                         </Label>
-                         <ComboBox fx:id="comboDifficolta" prefWidth="200.0" />
-                     </children>
-                  </VBox>
-
-                  <Button fx:id="btnStartServer" mnemonicParsing="false" onAction="#avviaServer" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #1a4261;" text="Avvia Ascolto Socket" textFill="WHITE">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Button>
-                  
-                  <Label text="Statistiche Database" textFill="#1a4261">
-                     <font><Font name="System Bold" size="18.0" /></font>
-                     <VBox.margin><Insets top="30.0" /></VBox.margin>
-                  </Label>
-                  <HBox spacing="10.0">
-                     <children>
-                        <Label text="Partite Disputate Totali:" />
-                        <Label fx:id="lblTotalePartite" text="0" textFill="#1a4261">
-                           <font><Font name="System Bold" size="14.0" /></font>
-                        </Label>
+                        <VBox prefWidth="350.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;">
+                           <children>
+                              <Label text="Stato Server" textFill="#1a4261">
+                                 <font><Font name="System Bold" size="18.0" /></font>
+                              </Label>
+                              <Label fx:id="lblServerStatus" text="🔴 Disconnesso" textFill="#a43737">
+                                 <font><Font size="14.0" /></font>
+                              </Label>
+                              <VBox spacing="5.0">
+                                 <children>
+                                     <Label text="Seleziona Difficoltà:" textFill="#1a4261">
+                                         <font><Font name="System Bold" size="14.0" /></font>
+                                     </Label>
+                                     <ComboBox fx:id="comboDifficolta" prefWidth="200.0" />
+                                 </children>
+                              </VBox>
+                              <Button fx:id="btnStartServer" onAction="#avviaServer" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #1a4261;" text="Avvia Ascolto Socket" textFill="WHITE">
+                                 <font><Font name="System Bold" size="14.0" /></font>
+                              </Button>
+                           </children>
+                        </VBox>
+                        <VBox spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label text="Generatore Sfide" textFill="#1a4261">
+                                 <font><Font name="System Bold" size="18.0" /></font>
+                              </Label>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button onAction="#caricaFileTesto" style="-fx-background-color: #a43737;" text="Carica File .txt" textFill="WHITE" />
+                                    <ComboBox fx:id="comboStoricoFile" onAction="#caricaDaStorico" prefWidth="200.0" promptText="Storico file..." />
+                                 </children>
+                              </HBox>
+                              <Label fx:id="lblNomeFile" text="Nessun file selezionato" textFill="#666666" />
+                              <ProgressBar fx:id="progressBar" prefWidth="350.0" visible="false" />
+                              <TableView fx:id="tabellaParole" VBox.vgrow="ALWAYS">
+                                <columns>
+                                  <TableColumn fx:id="colonnaParola" prefWidth="200.0" text="Parola Estratta" />
+                                  <TableColumn fx:id="colonnaFrequenza" prefWidth="100.0" text="Frequenza" />
+                                </columns>
+                              </TableView>
+                           </children>
+                        </VBox>
                      </children>
                   </HBox>
-               </children>
-            </VBox>
-
-            <VBox prefWidth="400.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" HBox.hgrow="ALWAYS">
-               <children>
-                  <Label text="Generatore Sfide (Stream API)" textFill="#1a4261">
-                     <font><Font name="System Bold" size="18.0" /></font>
-                  </Label>
-                <VBox spacing="10.0">
-                  <children>
-                    <HBox alignment="CENTER_LEFT" spacing="10.0">
-                        <children>
-                            <Button mnemonicParsing="false" onAction="#caricaFileTesto" style="-fx-background-color: #a43737;" text="Carica File .txt" textFill="WHITE" />
-                            <ComboBox fx:id="comboStoricoFile" onAction="#caricaDaStorico" prefWidth="200.0" promptText="Storico file analizzati..." />
-                        </children>
-                    </HBox>
-                    <Label fx:id="lblNomeFile" text="Nessun file selezionato" textFill="#666666" />
-                  </children>
-                </VBox>    
-                  <ProgressBar fx:id="progressBar" prefWidth="350.0" progress="0.0" visible="false" />
-                  
-                  <TableView fx:id="tabellaParole" prefHeight="300.0" VBox.vgrow="ALWAYS">
-                    <columns>
-                      <TableColumn fx:id="colonnaParola" prefWidth="200.0" text="Parola Estratta" />
-                      <TableColumn fx:id="colonnaFrequenza" prefWidth="100.0" text="Frequenza" />
-                    </columns>
-                  </TableView>
-               </children>
-            </VBox>
-         </children>
-      </HBox>
+               </content>
+          </Tab>
+          
+          <Tab text="📊 Analisi &amp; Statistiche" onSelectionChanged="#aggiornaStatisticheClick">
+               <content>
+                  <VBox spacing="20.0">
+                     <padding><Insets bottom="20.0" left="20.0" right="20.0" top="20.0" /></padding>
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;">
+                           <children>
+                              <Label text="Partite Disputate Totali:" textFill="#1a4261">
+                                 <font><Font name="System Bold" size="18.0" /></font>
+                              </Label>
+                              <Label fx:id="lblTotalePartite" text="0" textFill="#a43737">
+                                 <font><Font name="System Bold" size="24.0" /></font>
+                              </Label>
+                              <Region HBox.hgrow="ALWAYS" />
+                              <Button onAction="#aggiornaStatisticheClick" style="-fx-background-color: #1a4261;" text="🔄 Aggiorna Dati" textFill="WHITE" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15;" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label text="🏆 Vittorie per Utente" textFill="#1a4261">
+                                       <font><Font name="System Bold" size="16.0" /></font>
+                                    </Label>
+                                    <TableView fx:id="tabellaVittorie" VBox.vgrow="ALWAYS">
+                                      <columns>
+                                        <TableColumn fx:id="colVittoriaUser" prefWidth="150.0" text="Username" />
+                                        <TableColumn fx:id="colVittoriaCount" prefWidth="100.0" text="Vittorie" />
+                                      </columns>
+                                    </TableView>
+                                 </children>
+                              </VBox>
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15;" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label text="⏱️ Tempo Medio di Risposta" textFill="#1a4261">
+                                       <font><Font name="System Bold" size="16.0" /></font>
+                                    </Label>
+                                    <TableView fx:id="tabellaTempi" VBox.vgrow="ALWAYS">
+                                      <columns>
+                                        <TableColumn fx:id="colTempoUser" prefWidth="150.0" text="Username" />
+                                        <TableColumn fx:id="colTempoMedia" prefWidth="100.0" text="Media (sec)" />
+                                      </columns>
+                                    </TableView>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+          </Tab>
+        </tabs>
+      </TabPane>
    </center>
 </BorderPane>

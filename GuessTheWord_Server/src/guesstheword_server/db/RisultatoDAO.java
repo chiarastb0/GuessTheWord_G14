@@ -146,25 +146,36 @@ public class RisultatoDAO implements DAO<Risultato>{
     }
     
     // Calcola il tempo medio di risposta per un singolo giocatore
-    public double getTempoMedioRisposta(long idUtente) {
-        double media = 0;
-        String sql = "SELECT AVG(tempo_risposta_ms) FROM RISULTATO WHERE id_utente = ?";
-
+    public List<Map.Entry<String, Double>> getTempoMedioPerUtente() {
+        List<Map.Entry<String, Double>> lista = new ArrayList<>();
+        String sql = "SELECT UTENTE.username, AVG(RISULTATO.tempo_risposta_ms) / 1000.0 AS media " +
+                     "FROM UTENTE JOIN RISULTATO ON UTENTE.id_utente = RISULTATO.id_utente " +
+                     "GROUP BY UTENTE.username ORDER BY media ASC";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setLong(1, idUtente);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    media = rs.getDouble(1);
-                }
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                double media = Math.round(rs.getDouble("media") * 100.0) / 100.0;
+                lista.add(new AbstractMap.SimpleEntry<>(rs.getString("username"), media));
             }
-
-        } catch (SQLException e) {
-            throw new DBException("Errore calcolo tempo medio", e);
-        }
-        return media;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return lista;
+    }
+    
+    public List<Map.Entry<String, Integer>> getVittoriePerUtente() {
+        List<Map.Entry<String, Integer>> lista = new ArrayList<>();
+        String sql = "SELECT UTENTE.username, COUNT(RISULTATO.id_risultato) AS tot " +
+                     "FROM UTENTE JOIN RISULTATO ON UTENTE.id_utente = RISULTATO.id_utente " +
+                     "WHERE RISULTATO.esito = 'VITTORIA' " +
+                     "GROUP BY UTENTE.username ORDER BY tot DESC";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                lista.add(new AbstractMap.SimpleEntry<>(rs.getString("username"), rs.getInt("tot")));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return lista;
     }
     
     // Recupera lo storico formattato facendo una JOIN tra RISULTATO e PARTITA

@@ -5,24 +5,20 @@
 package guesstheword_server.controller;
 
 import guesstheword_server.db.PartitaDAO;
+import guesstheword_server.db.RisultatoDAO;
 import guesstheword_server.network.ServerManager;
 import guesstheword_server.utils.FileManager;
 import java.io.File;
-import java.util.Map;
+import java.util.*;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleLongProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.scene.control.ComboBox;
+
 
 public class AdminDashboardController {
 
@@ -37,17 +33,34 @@ public class AdminDashboardController {
     @FXML private ComboBox<String> comboStoricoFile;
     @FXML private ComboBox<String> comboDifficolta;
     
-    private final File cartellaStorico = new File("storico_dizionari");
-    private File ultimoFileCaricato;
+    //COMPONENTI PER LE STATISTICHE
+    @FXML private TableView<Map.Entry<String, Integer>> tabellaVittorie;
+    @FXML private TableColumn<Map.Entry<String, Integer>, String> colVittoriaUser;
+    @FXML private TableColumn<Map.Entry<String, Integer>, Integer> colVittoriaCount;
+
+    @FXML private TableView<Map.Entry<String, Double>> tabellaTempi;
+    @FXML private TableColumn<Map.Entry<String, Double>, String> colTempoUser;
+    @FXML private TableColumn<Map.Entry<String, Double>, Double> colTempoMedia;
+
     private ServerManager serverManager;
-    
-    // Variabile aggiunta per tenere in memoria il testo completo e passarlo al Server!
     private String testoIntegraleCorrente = ""; 
+    private final File cartellaStorico = new File("storico_dizionari");
+    
+    private File ultimoFileCaricato;
 
     @FXML
     public void initialize() {
         colonnaParola.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getKey()));
         colonnaFrequenza.setCellValueFactory(cellData -> new SimpleLongProperty(cellData.getValue().getValue()).asObject());
+        
+        //CONFIGURAZIONe TABELLE STATISTICHE
+        colVittoriaUser.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getKey()));
+        colVittoriaCount.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getValue()).asObject());
+
+        colTempoUser.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getKey()));
+        colTempoMedia.setCellValueFactory(d -> new SimpleDoubleProperty(d.getValue().getValue()).asObject());
+
+        
         caricaStatisticheDatabase();
         
         // Popoliamo il menu della difficoltà e impostiamo "Facile" come predefinito
@@ -129,13 +142,26 @@ public class AdminDashboardController {
 
     private void caricaStatisticheDatabase() {
         try {
-            PartitaDAO partitaDAO = new PartitaDAO();
-            int totale = partitaDAO.getNumeroPartiteDisputate();
-            lblTotalePartite.setText(String.valueOf(totale));
+            RisultatoDAO risDAO = new RisultatoDAO();
+            PartitaDAO parDAO = new PartitaDAO();
+            
+            // 1. Partite totali
+            lblTotalePartite.setText(String.valueOf(parDAO.getNumeroPartiteDisputate()));
+
+            // 2. Tabella Vittorie
+            tabellaVittorie.getItems().setAll(risDAO.getVittoriePerUtente());
+
+            // 3. Tabella Tempi Medi
+            tabellaTempi.getItems().setAll(risDAO.getTempoMedioPerUtente());
+
         } catch (Exception e) {
-            lblTotalePartite.setText("Errore DB");
-            System.err.println("Impossibile leggere le statistiche: " + e.getMessage());
+            System.err.println("Errore caricamento statistiche: " + e.getMessage());
         }
+    }
+    
+    @FXML
+    void aggiornaStatisticheClick() {
+        caricaStatisticheDatabase();
     }
 
     @FXML
