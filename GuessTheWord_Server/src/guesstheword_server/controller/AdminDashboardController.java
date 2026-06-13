@@ -100,6 +100,11 @@ public class AdminDashboardController {
                 System.err.println("Errore ripristino inizializzazione: " + e.getMessage());
             }
         }
+        
+        // Forza l'auto-adattamento delle colonne eliminando la colonna vuota a destra
+        tabellaVittorie.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tabellaTempi.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
         aggiornaTendinaStorico();
     }
     
