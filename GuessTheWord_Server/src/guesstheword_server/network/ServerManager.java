@@ -347,6 +347,16 @@ public class ServerManager {
             System.err.println("[SERVER DB] Errore salvataggio: " + e.getMessage());
         }
     }
+    
+    public boolean isGiocatoreGiaConnesso(String username) {
+    // Cicliamo su tutti i client attualmente connessi al server
+        for (ClientHandler client : clientConnessi) { 
+            if (client.getUsernameUtente().equalsIgnoreCase(username)) {
+                return true; // Trovato! L'utente ha già una sessione attiva
+            }
+        }
+        return false;
+    }
 
     private void resetPartita() {
         giocatoriPronti.clear();

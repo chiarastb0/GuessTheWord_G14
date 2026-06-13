@@ -93,28 +93,37 @@ public class ClientHandler implements Runnable {
             case "REGISTRAZIONE":
                 String[] datiReg = parti[1].split(":");
                 if (datiReg.length == 3) {
-                    String rUser = datiReg[0];
-                    String rPass = datiReg[1];
-                    String rRuolo = datiReg[2];
-            
-                    // Creiamo l'oggetto modello Utente da passare al Database
-                    // Passiamo 0 come ID provvisorio, l'auto-increment del DB assegnerà quello reale
-                    Utente nuovoUtente = new Utente(rUser, rPass, rRuolo);
-            
+                    String rUser = datiReg[0].trim();
+                    String rPass = datiReg[1].trim();
+                    String rRuolo = datiReg[2].trim();
+        
+                    // Unico blocco try per l'intera transazione di registrazione
                     try {
-                        // Chiamiamo il metodo insert di UtenteDAO
+                        // 1. Controllo preventivo: l'username esiste?
+                        if (utenteDAO.esisteUsername(rUser)) {
+                            System.out.println("[REGISTRAZIONE NEGATA] Username già occupato: " + rUser);
+                            inviaMessaggio("REG_FAIL:Impossibile registrarsi. Username già esistente.");
+                            break; 
+                        }
+            
+                        // 2. Se non esiste, procediamo direttamente all'inserimento
+                        Utente nuovoUtente = new Utente(rUser, rPass, rRuolo);
                         utenteDAO.insert(nuovoUtente);
-                
-                        // Comunichiamo al Client che la registrazione è riuscita!
+            
+                        // 3. Successo!
                         inviaMessaggio("REG_SUCCESS:Account creato! Adesso puoi fare il login.");
+            
                     } catch (Exception e) {
-                        // Se ad esempio l'username esiste già e genera un vincolo UNIQUE violato nel DB
-                        inviaMessaggio("REG_FAIL:Impossibile registrarsi. Username già esistente.");
-                    }
-                } else {
-                    inviaMessaggio("REG_FAIL:Formato dati registrazione errato.");
+                    // Qualsiasi cosa vada storta (SQL, Driver, tabelle errate), la catturiamo qui
+                    System.err.println("[SERVER] Errore critico durante la registrazione di " + rUser + ": " + e.getMessage());
+                    e.printStackTrace(); // Ti stampa in console l'errore reale per fare debug!
+            
+                    inviaMessaggio("REG_FAIL:Errore interno del server durante la registrazione.");
                 }
-                break;
+            } else {
+                inviaMessaggio("REG_FAIL:Formato dati registrazione errato.");
+            }
+            break;
                 
             case "AVVIA_SFIDA":
                 System.out.println("[CODA] L'utente " + getUsernameUtente() + " ha richiesto di avviare una sfida dalla Lobby.");
@@ -160,6 +169,13 @@ public class ClientHandler implements Runnable {
 
         if (utenteAutenticato.isPresent()) {
             Utente u = utenteAutenticato.get();
+            
+            if (serverManager.isGiocatoreGiaConnesso(u.getUsername())) {
+                System.out.println("[LOGIN NEGATO] L'utente '" + u.getUsername() + "' è già connesso da un altro client.");
+                inviaMessaggio("LOGIN_FAIL:Questo account è già correntemente connesso.");
+                return; // Interrompe il login
+            
+            }
             this.usernameUtente = u.getUsername();
             this.idUtente = u.getIdUtente();
             // Inviamo la risposta di successo includendo Ruolo e Username
