@@ -11,34 +11,37 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class ScreenGameController implements Initializable {
 
     // --- COMPONENTI SCHEDA GIOCO ---
-    @FXML
-    private Label lblTimer;
-    @FXML
-    private Label lblNotifica; // 🔥 Collegamento alla nuova label FXML
-    @FXML
-    private Timeline timelineErrore; // Gestirà la sparizione del testo errato
-    @FXML
-    private TextArea txtAreaSfida;
-    @FXML
-    private TextField txtRisposta;
+    @FXML private Label lblTimer;
+    @FXML private Label lblNotifica; 
+    @FXML private TextArea txtAreaSfida;
+    @FXML private TextField txtRisposta;
+    
+    // --- NUOVI COMPONENTI AGGIUNTI PER OVERLAY ---
+    @FXML private TabPane mainGameContainer;       // Per disabilitare i click sulla scheda sotto
+    @FXML private VBox paneRisultato;              // Il contenitore scuro a schermo intero
+    @FXML private Label lblEsitoTitolo;            // Scritta grande Vittoria/Sconfitta
+    @FXML private Label lblEsitoDescrizione;       // Testo descrittivo dei punti
 
     private ClientConnection clientConnection;
     private Timeline timeline;
     private int secondiRimanenti;
+    private Timeline timelineErrore; 
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Metodo lasciato intenzionalmente vuoto: non vi sono più tabelle locali da mappare
+        // Inizializzazione pulita
     }    
     
     public void setClientConnection(ClientConnection connessione) {
@@ -47,6 +50,10 @@ public class ScreenGameController implements Initializable {
     }
 
     public void inizializzaPartita(String tempo, String testoCifrato) {
+        // Ripristiniamo lo stato della UI in caso di partite multiple consecutive
+        paneRisultato.setVisible(false);
+        mainGameContainer.setDisable(false);
+        
         txtAreaSfida.setText(testoCifrato);
         txtRisposta.setDisable(false);
         txtRisposta.clear();
@@ -84,111 +91,101 @@ public class ScreenGameController implements Initializable {
     }
     
     /**
-     * Riceve il comando di fine partita dalla rete e mostra un Pop-up grafico
+     * Gestisce la fine della partita mostrando l'overlay grafico in-game
      */
     public void gestisciFinePartita(String messaggioRete) {
-        // Il messaggio è tipo "FINE_PARTITA:VITTORIA:Hai indovinato la parola..."
         String[] parti = messaggioRete.split(":", 3); 
         if (parti.length < 3) return;
 
         String esito = parti[1]; // VITTORIA, SCONFITTA o PAREGGIO
-        String testoAvviso = parti[2]; // La spiegazione
+        String testoAvviso = parti[2]; // La spiegazione del server
 
-        // Platform.runLater forza l'aggiornamento sulla coda grafica di JavaFX
         Platform.runLater(() -> {
             if (timeline != null) {
-                timeline.stop(); // Fermiamo il timer locale per sicurezza
+                timeline.stop(); // Blocchiamo il tempo residuo
             }
-            Alert alert = new Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-            alert.setHeaderText("Partita Terminata!");
-            alert.setContentText(testoAvviso);
-
-            // Personalizziamo il titolo della finestrella in base all'esito
+            
+            // 1. Congeliamo l'interfaccia sotto
+            mainGameContainer.setDisable(true);
+            
+            // 2. Personalizziamo i testi dell'overlay
+            lblEsitoDescrizione.setText(testoAvviso);
+            
             switch (esito) {
                 case "VITTORIA":
-                    alert.setTitle("Hai Vinto!");
+                    lblEsitoTitolo.setText("HAI VINTO!");
                     break;
                 case "SCONFITTA":
-                    alert.setTitle("Hai Perso!");
+                    lblEsitoTitolo.setText("HAI PERSO");
                     break;
                 case "PAREGGIO":
-                    alert.setTitle("⏱️ Pareggio!");
+                    lblEsitoTitolo.setText("PAREGGIO: tempo scaduto");
                     break;
             }
 
-            // Mostriamo il pop-up e aspettiamo che l'utente clicchi OK
-            alert.showAndWait();
-            // 🔥 SEZIONE RITORNO ALLA LOBBY DINAMICO
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/LobbyView.fxml"));
-                Parent lobbyRoot = loader.load();
-
-                LobbyController controllerLobby = loader.getController();
-                
-                // Rincrociamo i riferimenti di ascolto di ClientConnection alla lobby
-                controllerLobby.setClientConnection(clientConnection);
-                clientConnection.setControllerLobby(controllerLobby);
-                clientConnection.setControllerGioco(null); // Sganciamo il gioco vecchio
-
-                // Recuperiamo lo Stage attuale partendo da un nodo della schermata di gioco
-                Stage stage = (Stage) txtAreaSfida.getScene().getWindow();
-                Scene scenaLobby = new Scene(lobbyRoot);
-                stage.setScene(scenaLobby);
-                stage.setTitle("Guess The Word - Lobby di Attesa");
-                stage.centerOnScreen();
-                stage.show();
-
-                System.out.println("[GUI] Ritorno alla lobby completato con successo.");
-                
-                clientConnection.spedisciMessaggio("RICHIESTA_STORICO");
-                clientConnection.spedisciMessaggio("RICHIESTA_CLASSIFICA");
-
-            } catch (Exception e) {
-                System.err.println("Errore durante il ritorno automatico alla lobby: " + e.getMessage());
-                e.printStackTrace();
-            }
+            // 3. Mostriamo l'overlay oscurando la UI
+            paneRisultato.setVisible(true);
         });
     }
     
     /**
-     * Aggiorna la casella di testo in tempo reale quando una parola viene svelata
+     * Azione collegata al bottone dell'overlay per ritornare alla lobby
      */
+    @FXML
+    private void ritornoAllaLobby() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/LobbyView.fxml"));
+            Parent lobbyRoot = loader.load();
+
+            LobbyController controllerLobby = loader.getController();
+            
+            // Ripristiniamo i puntatori di rete verso il controller lobby
+            controllerLobby.setClientConnection(clientConnection);
+            clientConnection.setControllerLobby(controllerLobby);
+            clientConnection.setControllerGioco(null); // Rilasciamo il gioco attuale
+
+            // Cambiamo scena sulla finestra attuale
+            Stage stage = (Stage) paneRisultato.getScene().getWindow();
+            Scene scenaLobby = new Scene(lobbyRoot);
+            stage.setScene(scenaLobby);
+            stage.setTitle("Guess The Word - Lobby di Attesa");
+            stage.centerOnScreen();
+            stage.show();
+
+            System.out.println("[GUI] Ritorno alla lobby completato con successo via Overlay.");
+            
+            // Aggiorniamo istantaneamente i dati delle classifiche/storici della lobby ricaricata
+            clientConnection.spedisciMessaggio("RICHIEDI_STORICO");
+            clientConnection.spedisciMessaggio("RICHIEDI_CLASSIFICA");
+
+        } catch (Exception e) {
+            System.err.println("Errore durante il ritorno alla lobby dall'overlay: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     public void aggiornaTestoDinamicamente(String nuovoTesto) {
         Platform.runLater(() -> {
             txtAreaSfida.setText(nuovoTesto);
-            // Svuota la casella di input per prepararsi alla prossima parola
             txtRisposta.clear(); 
         });
     }
 
-    /**
-     * Mostra un popup rapido (non bloccante) per informare sui progressi
-     */
     public void mostraNotifica(String messaggio) {
-        Platform.runLater(() -> {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-            alert.setTitle("Aggiornamento Partita");
-            alert.setHeaderText(null);
-            alert.setContentText(messaggio);
-            alert.show(); // Usiamo show() invece di showAndWait() per non bloccare il timer!
-        });
+        // Questo metodo mostrava un alert.show() asincrono fastidioso, lo convertiamo
+        // per usare la label interna temporanea così da non interrompere l'esperienza utente.
+        mostraMessaggioErroreTemporaneo(messaggio);
     }
     
-    /**
-     * Mostra un messaggio dinamico sulla UI che scompare da solo dopo 2 secondi.
-     */
     public void mostraMessaggioErroreTemporaneo(String messaggio) {
-        // Se c'era già una notifica attiva, la stoppiamo per resettare il tempo
         if (timelineErrore != null) {
             timelineErrore.stop();
         }
 
-        // Impostiamo il testo (il colore rosso è già preimpostato nell'FXML)
         lblNotifica.setText(messaggio);
 
-        // Creiamo un timer locale di 2 secondi per ripulire la label
         timelineErrore = new Timeline(new KeyFrame(Duration.seconds(2), event -> {
-            lblNotifica.setText(""); // Cancella il testo allo scadere del tempo
+            lblNotifica.setText(""); 
         }));
         timelineErrore.setCycleCount(1);
         timelineErrore.play();

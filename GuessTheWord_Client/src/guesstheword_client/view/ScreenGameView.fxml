@@ -10,78 +10,107 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<TabPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #E3F2FD; -fx-tab-header-background: transparent;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_client.controller.ScreenGameController">
-   <tabs>
-      <Tab style="-fx-background-color: white; -fx-text-base-color: #1a4261; -fx-background-radius: 10 10 0 0; -fx-border-radius: 10 10 0 0; -fx-border-color: #CBD5E1; -fx-border-width: 1 1 0 1; -fx-font-weight: bold;" text="Sfida">
-         <content>
-            <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="540.0" prefWidth="800.0">
-               <top>
-                  <HBox alignment="CENTER_RIGHT" prefHeight="60.0" prefWidth="800.0" BorderPane.alignment="CENTER">
-                     <children>
-                        <Label fx:id="lblNotifica" alignment="CENTER" prefHeight="30.0" style="-fx-font-weight: bold;" text="" textFill="#EF4444">
-                           <font>
-                              <Font name="System Bold" size="16.0" />
-                           </font>
-                           <HBox.margin>
-                              <Insets right="40.0" />
-                           </HBox.margin>
-                        </Label>
-                        
-                        <Label alignment="CENTER" contentDisplay="BOTTOM" prefHeight="30.0" style="-fx-font-weight: bold;" text=" Tempo rimasto:      " textFill="#1a4261">
-                           <font>
-                              <Font name="System Bold" size="18.0" />
-                           </font>
-                        </Label>
-                        <Label fx:id="lblTimer" alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="69.0" style="-fx-font-weight: bold;" text="tempo" textFill="#a43737">
-                           <font>
-                              <Font name="System Bold" size="16.0" />
-                           </font>
-                           <HBox.margin>
-                              <Insets right="20.0" />
-                           </HBox.margin>
-                        </Label>
-                     </children>
-                  </HBox>
-               </top>
-               <center>
-                  <VBox prefHeight="200.0" prefWidth="100.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" BorderPane.alignment="CENTER">
-                     <children>
-                        <Label prefHeight="40.0" style="-fx-font-weight: bold;" text="Decifra la parola evidenziata nel testo seguente:" textFill="#1a4261">
-                           <font>
-                              <Font name="System Bold" size="20.0" />
-                           </font>
-                           <VBox.margin>
-                              <Insets bottom="10.0" />
-                           </VBox.margin>
-                        </Label>
-                        <TextArea fx:id="txtAreaSfida" editable="false" prefHeight="250.0" prefWidth="720.0" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #CBD5E1; -fx-border-width: 1;" wrapText="true" VBox.vgrow="ALWAYS" />
-                     </children>
-                     <BorderPane.margin>
-                        <Insets left="20.0" right="20.0" />
-                     </BorderPane.margin>
-                  </VBox>
-               </center>
-               <bottom>
-                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="30.0" BorderPane.alignment="CENTER">
-                     <children>
-                        <TextField fx:id="txtRisposta" prefHeight="45.0" prefWidth="350.0" promptText="Inserisci la parola..." style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #CBD5E1;">
-                           <font>
-                              <Font size="14.0" />
-                           </font>
-                        </TextField>
-                        <Button graphicTextGap="5.0" mnemonicParsing="false" onAction="#gestisciInvioRisposta" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #1a4261; -fx-background-radius: 5; -fx-cursor: hand; -fx-font-weight: bold;" text="💡 Indovina" textFill="WHITE">
-                           <font>
-                              <Font name="System Bold" size="18.0" />
-                           </font>
-                        </Button>
-                     </children>
-                  </HBox>
-               </bottom>
-            </BorderPane>
-         </content>
-      </Tab>
-   </tabs>
-</TabPane>
+<StackPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_client.controller.ScreenGameController">
+   <children>
+      
+      <TabPane fx:id="mainGameContainer" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #E3F2FD; -fx-tab-header-background: transparent;">
+         <tabs>
+            <Tab style="-fx-background-color: white; -fx-text-base-color: #1a4261; -fx-background-radius: 10 10 0 0; -fx-border-radius: 10 10 0 0; -fx-border-color: #CBD5E1; -fx-border-width: 1 1 0 1; -fx-font-weight: bold;" text="Sfida">
+               <content>
+                  <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="540.0" prefWidth="800.0">
+                     <top>
+                        <HBox alignment="CENTER_RIGHT" prefHeight="60.0" prefWidth="800.0" BorderPane.alignment="CENTER">
+                           <children>
+                              <Label fx:id="lblNotifica" alignment="CENTER" prefHeight="30.0" style="-fx-font-weight: bold;" text="" textFill="#EF4444">
+                                 <font>
+                                    <Font name="System Bold" size="16.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets right="40.0" />
+                                 </HBox.margin>
+                              </Label>
+                              <Label alignment="CENTER" contentDisplay="BOTTOM" prefHeight="30.0" style="-fx-font-weight: bold;" text=" Tempo rimasto:      " textFill="#1a4261">
+                                 <font>
+                                    <Font name="System Bold" size="18.0" />
+                                 </font>
+                              </Label>
+                              <Label fx:id="lblTimer" alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="69.0" style="-fx-font-weight: bold;" text="tempo" textFill="#a43737">
+                                 <font>
+                                    <Font name="System Bold" size="16.0" />
+                                 </font>
+                                 <HBox.margin>
+                                    <Insets right="20.0" />
+                                 </HBox.margin>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </top>
+                     <center>
+                        <VBox prefHeight="200.0" prefWidth="100.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" BorderPane.alignment="CENTER">
+                           <children>
+                              <Label prefHeight="40.0" style="-fx-font-weight: bold;" text="Decifra la parola evidenziata nel testo seguente:" textFill="#1a4261">
+                                 <font>
+                                    <Font name="System Bold" size="20.0" />
+                                 </font>
+                                 <VBox.margin>
+                                    <Insets bottom="10.0" />
+                                 </VBox.margin>
+                              </Label>
+                              <TextArea fx:id="txtAreaSfida" editable="false" prefHeight="250.0" prefWidth="720.0" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #CBD5E1; -fx-border-width: 1;" wrapText="true" VBox.vgrow="ALWAYS" />
+                           </children>
+                           <BorderPane.margin>
+                              <Insets left="20.0" right="20.0" />
+                           </BorderPane.margin>
+                        </VBox>
+                     </center>
+                     <bottom>
+                        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="30.0" BorderPane.alignment="CENTER">
+                           <children>
+                              <TextField fx:id="txtRisposta" prefHeight="45.0" prefWidth="350.0" promptText="Inserisci la parola..." style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #CBD5E1;">
+                                 <font>
+                                    <Font size="14.0" />
+                                 </font>
+                              </TextField>
+                              <Button graphicTextGap="5.0" mnemonicParsing="false" onAction="#gestisciInvioRisposta" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #1a4261; -fx-background-radius: 5; -fx-cursor: hand; -fx-font-weight: bold;" text="💡 Indovina" textFill="WHITE">
+                                 <font>
+                                    <Font name="System Bold" size="18.0" />
+                                 </font>
+                              </Button>
+                           </children>
+                        </HBox>
+                     </bottom>
+                  </BorderPane>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+
+      <VBox fx:id="paneRisultato" alignment="CENTER" spacing="25.0" style="-fx-background-color: rgba(255, 255, 255, 0.90);" visible="false">
+   <children>
+      <Label fx:id="lblEsitoTitolo" text="ESITO" textFill="#1a4261">
+         <font>
+            <Font name="System Bold" size="48.0" />
+         </font>
+      </Label>
+      <Label fx:id="lblEsitoDescrizione" text="Dettagli del punteggio ottenuti dal server" textFill="#334155" wrapText="true" textAlignment="CENTER">
+         <font>
+            <Font size="20.0" />
+         </font>
+         <VBox.margin>
+            <Insets left="50.0" right="50.0" />
+         </VBox.margin>
+      </Label>
+      <Button mnemonicParsing="false" onAction="#ritornoAllaLobby" prefHeight="50.0" prefWidth="240.0" style="-fx-background-color: #1a4261; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-weight: bold;" text="🚪 Torna alla Lobby" textFill="WHITE">
+         <font>
+            <Font name="System Bold" size="18.0" />
+         </font>
+      </Button>
+   </children>
+</VBox>
+      
+   </children>
+</StackPane>
