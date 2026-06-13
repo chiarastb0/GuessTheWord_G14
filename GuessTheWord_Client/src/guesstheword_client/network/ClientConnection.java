@@ -39,7 +39,15 @@ public class ClientConnection implements Runnable {
     private LobbyController controllerLobby;
     
     private String cacheStorico = null; // Il nostro cassetto temporaneo
+    
+    //variabile per salvare lo username del client
+    private String usernameLoggato = "";
 
+    
+    public String getUsernameLoggato() {
+        return this.usernameLoggato;
+    }
+    
     public ClientConnection(String ip, int porta) {
         this.ip = ip;
         this.porta = porta;
@@ -132,6 +140,10 @@ public class ClientConnection implements Runnable {
                 String[] pezzi = messaggio.split(":");
                 final String ruolo = (pezzi.length >= 2) ? pezzi[1].trim() : "PLAYER";
                 
+                if (pezzi.length >= 3) {
+                    this.usernameLoggato = pezzi[2].trim();
+                }
+                
                 if (controllerAuth != null) {
                     Platform.runLater(() -> {
                         controllerAuth.mostraMessaggioErroreLogin("✅Accesso riuscito!");
@@ -205,29 +217,33 @@ public class ClientConnection implements Runnable {
 
             case "DATI_CLASSIFICA":
                 // Formato atteso dal Server: DATI_CLASSIFICA:posizione,username,punti;posizione,username,punti;...
-                if (parti.length >= 2 && controllerGioco != null) {
+                if (parti.length >= 2 && controllerLobby != null) {
                     String contenuto = parti[1];
                     String[] righeGiocatori = contenuto.split(";");
-                        if (contenuto.equalsIgnoreCase("VUOTO")) {
-                            Platform.runLater(() -> {
+                    
+                    if (contenuto.equalsIgnoreCase("VUOTO")) {
+                        Platform.runLater(() -> {
                             System.out.println("[LOBBY] Nessun utente è ancora presente in classifica.");
                         });
-                        } else {
+                    } else {
                         // Usiamo Platform.runLater per aggiornare in sicurezza la TableView
                         Platform.runLater(() -> {
-                        for (String riga : righeGiocatori) {
-                            if (!riga.trim().isEmpty()) {
-                                String[] dati = riga.split(",");
-                                int pos = Integer.parseInt(dati[0]);
-                                String username = dati[1];
-                                int punti = Integer.parseInt(dati[2]);
-                                
-                                // Inietta la riga nel controller
-                                controllerLobby.aggiungiGiocatoreAClassifica(pos, username, punti);
+                            // Puliamo la classifica prima di aggiornarla per evitare duplicati grafici
+                            controllerLobby.tabellaClassifica.getItems().clear();
+                            
+                            for (String riga : righeGiocatori) {
+                                if (!riga.trim().isEmpty()) {
+                                    String[] dati = riga.split(",");
+                                    int pos = Integer.parseInt(dati[0]);
+                                    String username = dati[1];
+                                    int punti = Integer.parseInt(dati[2]);
+                                    
+                                    // Inietta la riga nel controller
+                                    controllerLobby.aggiungiGiocatoreAClassifica(pos, username, punti);
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+                    }
                 }
                 break;
 

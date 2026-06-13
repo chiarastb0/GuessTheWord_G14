@@ -26,6 +26,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
@@ -44,9 +45,9 @@ public class LobbyController implements Initializable {
     @FXML private TableColumn<PartitaStorico, Integer> colPunteggio;
 
     // Elementi Classifica Globale
-    @FXML private TableView<Classifica> tabellaClassifica;
+    @FXML public TableView<Classifica> tabellaClassifica;
     @FXML private TableColumn<Classifica, Integer> colPosizione;
-    @FXML private TableColumn<Classifica, Integer> colUtente;
+    @FXML private TableColumn<Classifica, String> colUtente;
     @FXML private TableColumn<Classifica, Integer> colPuntiTotali;
     
     private final ObservableList<PartitaStorico> datiStorico = FXCollections.observableArrayList();
@@ -62,12 +63,15 @@ public class LobbyController implements Initializable {
         colEsito.setCellValueFactory(new PropertyValueFactory<>("esito"));
         colPunteggio.setCellValueFactory(new PropertyValueFactory<>("punteggio"));
         tabellaStorico.setItems(datiStorico);
+        tabellaStorico.setSelectionModel(null); //evitiamo il click sulle righe
         
         // 2. Inizializzazione Tabella Classifica (Mappiamo i get di RigaClassifica)
         colPosizione.setCellValueFactory(new PropertyValueFactory<>("posizione"));
         colUtente.setCellValueFactory(new PropertyValueFactory<>("utente"));
         colPuntiTotali.setCellValueFactory(new PropertyValueFactory<>("puntiTotali"));
         tabellaClassifica.setItems(datiClassifica);
+        tabellaClassifica.setSelectionModel(null); //evitiamo click sulle righe
+
     }
 
     public void setClientConnection(ClientConnection connessione) {
