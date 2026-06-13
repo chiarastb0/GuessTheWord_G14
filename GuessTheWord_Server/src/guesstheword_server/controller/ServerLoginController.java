@@ -77,7 +77,7 @@ public class ServerLoginController implements Initializable {
                     lblErroreAdmin.setText("Errore: Questo account non ha i privilegi di Admin.");
                 }
             } else {
-                lblErroreAdmin.setText("❌ Username o Password errati.");
+                lblErroreAdmin.setText("Username o Password errati.");
             }
             
         } catch (Exception e) {

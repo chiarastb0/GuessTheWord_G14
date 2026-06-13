@@ -7,6 +7,7 @@ package guesstheword_server.network;
 
 import guesstheword_server.db.UtenteDAO;
 import guesstheword_server.model.Utente;
+import static guesstheword_server.utils.PasswordUtils.hashPassword;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -105,9 +106,11 @@ public class ClientHandler implements Runnable {
                             inviaMessaggio("REG_FAIL:Impossibile registrarsi. Username già esistente.");
                             break; 
                         }
-            
+                        
+                        String passwordCifrata = hashPassword(rPass, rUser);
+                        
                         // 2. Se non esiste, procediamo direttamente all'inserimento
-                        Utente nuovoUtente = new Utente(rUser, rPass, rRuolo);
+                        Utente nuovoUtente = new Utente(rUser, passwordCifrata, rRuolo);
                         utenteDAO.insert(nuovoUtente);
             
                         // 3. Successo!
