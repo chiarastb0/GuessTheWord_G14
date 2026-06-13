@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
+ * @class GuessTheWord_Client
  * @brief Classe principale dell'applicazione GuessTheWord Client.
  * * Questa classe estende l'applicazione JavaFX e funge da punto di ingresso (Entry Point) 
  * del programma, si occupa di inizializzare la connessione di rete con il server, 

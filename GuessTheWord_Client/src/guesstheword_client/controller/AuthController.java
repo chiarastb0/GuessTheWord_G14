@@ -20,29 +20,77 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class AuthController implements Initializable {
+/**
+ * @class AuthController
+ * @brief Gestisce le interazioni dell'interfaccia utente per l'accesso e la registrazione.
+ * Implementa l'interfaccia Initializable di JavaFX, si occupa di scambiare i pannelli 
+ * di login e registrazione all'interno dello stesso stage, inviare le credenziali al server 
+ * tramite il protocollo predefinito e, in caso di successo, effettuare lo switch di scena verso la lobby.
+ */
 
-    // PANNELLO LOGIN
+public class AuthController {
+
+    //LOGIN
+    /** 
+     * @brief Contenitore principale del form di Login (collegato via FXML). 
+     */
     @FXML private VBox paneLogin;
+    
+    /** 
+     * @brief Campo di testo per l'inserimento dello username di login. 
+    */
     @FXML private TextField txtLoginUser;
+    
+    /** 
+     * @brief Campo mascherato per l'inserimento della password di login. 
+    */
     @FXML private PasswordField txtLoginPass;
+    
+    /** 
+     * @brief Etichetta di testo usata per mostrare messaggi di errore o di stato nel Login. 
+    */
     @FXML private Label lblErroreLogin;
 
-    // PANNELLO REGISTRAZIONE
+    //REGISTRAZIONE
+    /** 
+     * @brief Contenitore principale del form di Registrazione (collegato via FXML). 
+    */
     @FXML private VBox paneRegistrazione;
+    
+    /** 
+     * @brief Campo di testo per l'inserimento del nuovo username in fase di registrazione. 
+    */
     @FXML private TextField txtRegUser;
+    
+    /** 
+     * @brief Campo mascherato per l'inserimento della password in fase di registrazione. 
+    */
     @FXML private PasswordField txtRegPass;
+    
+    /** 
+     * @brief Campo mascherato per la conferma della password inserita. 
+    */
     @FXML private PasswordField txtRegPassConfirm;
+    
+    /** 
+     * @brief Etichetta descrittiva contenente il ruolo preimpostato (PLAYER). 
+    */
     @FXML private Label comboRuolo;
+    
+    /** 
+     * @brief Etichetta di testo usata per mostrare messaggi di errore o di stato nella Registrazione. 
+    */
     @FXML private Label lblErroreReg;
 
+    /** 
+     * @brief Riferimento alla connessione di rete attiva per l'invio dei comandi. 
+    */
     private ClientConnection clientConnection;
-
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
-           // Lascia vuoto: il testo "PLAYER" è già impostato nel file FXML
-    }
     
+    /**
+     * @brief Configura la connessione di rete corrente e vi si registra come controller.
+     * @param connessione L'istanza attiva di ClientConnection.
+     */
     public void setClientConnection(ClientConnection connessione) {
         this.clientConnection = connessione;
         if (connessione != null) {
@@ -50,6 +98,11 @@ public class AuthController implements Initializable {
         }
     }
 
+    /**
+     * @brief Event handler per mostrare graficamente il pannello di Registrazione.
+     * Nasconde il pannello di login, rende visibile quello di registrazione e resetta i messaggi d'errore passati.
+     * @param event L'evento di click sul pulsante generato da JavaFX.
+     */
     @FXML
     void mostraPannelloRegistrazione(ActionEvent event) {
         paneLogin.setVisible(false);
@@ -57,6 +110,11 @@ public class AuthController implements Initializable {
         lblErroreLogin.setText("");
     }
 
+    /**
+     * @brief Event handler per mostrare graficamente il pannello di Login.
+     * Nasconde il pannello di registrazione, rende visibile quello di login e resetta i messaggi d'errore passati.
+     * @param event L'evento di click sul pulsante generato da JavaFX.
+     */
     @FXML
     public void mostraPannelloLogin(ActionEvent event) {
         paneRegistrazione.setVisible(false);
@@ -64,6 +122,12 @@ public class AuthController implements Initializable {
         lblErroreReg.setText("");
     }
 
+    /**
+     * @brief Gestisce la logica della richiesta di Login.
+     * @details Estrae l'input dai campi grafici, verifica localmente che non siano vuoti 
+     * e spedisce al server il messaggio nel formato di protocollo `LOGIN:username:password`.
+     * @param event L'evento di click sul pulsante Accedi.
+     */
     @FXML
     void gestisciLogin(ActionEvent event) {
         String user = txtLoginUser.getText().trim();
@@ -76,13 +140,21 @@ public class AuthController implements Initializable {
 
         if (clientConnection != null) {
             lblErroreLogin.setText("Tentativo di accesso in corso...");
-            // Spediamo il comando al ClientHandler del Server seguendo il protocollo
             clientConnection.spedisciMessaggio("LOGIN:" + user + ":" + pass);
         } else {
             lblErroreLogin.setText("❌ Errore: Nessuna connessione al server.");
         }
     }
 
+    /**
+     * @brief Gestisce la logica e le validazioni locali per la richiesta di Registrazione.
+     * Estrae i parametri dai textfield ed esegue tre controlli di validazione prima dell'invio:
+     * - Presenza di campi vuoti.
+     * - Coerenza tra password e conferma password.
+     * - Assenza del carattere speciale dei due punti `:`, poichè agisce da delimitatore del protocollo di rete.
+     * Se i test passano, inoltra il comando `REGISTRAZIONE:username:password:ruolo`.
+     * @param event L'evento di click sul pulsante Registrati.
+     */
     @FXML
     void gestisciRegistrazione(ActionEvent event) {
         String user = txtRegUser.getText().trim();
@@ -90,13 +162,11 @@ public class AuthController implements Initializable {
         String passConfirm = txtRegPassConfirm.getText().trim();
         String ruolo = comboRuolo.getText().trim();
 
-        // Verifica campi vuoti (incluso il nuovo campo)
         if (user.isEmpty() || pass.isEmpty() || passConfirm.isEmpty() || ruolo.isEmpty()) {
             lblErroreReg.setText("⚠️ Compila tutti i campi!");
             return;
         }
 
-        // 🔥 CONTROLLO COERENZA PASSWORD (Intercettato in locale)
         if (!pass.equals(passConfirm)) {
             lblErroreReg.setText("Le password inserite non corrispondono.");
             return;
@@ -109,41 +179,41 @@ public class AuthController implements Initializable {
 
         if (clientConnection != null) {
             lblErroreReg.setText("Registrazione in corso...");
-            // Spediamo il nuovo comando di registrazione al server
             clientConnection.spedisciMessaggio("REGISTRAZIONE:" + user + ":" + pass + ":" + ruolo);
         } else {
             lblErroreReg.setText("❌ Errore: Nessuna connessione al server.");
         }
     }
     
+    /**
+     * @brief Elabora l'esito positivo del login comunicato dalla rete per effettuare il cambio scena.
+     * @details Svolge le seguenti operazioni sequenziali:
+     * 1. Verifica il ruolo trasmesso dal Server; se l'utente risulta un "ADMIN" l'accesso viene bloccato localmente.
+     * 2. Esegue il caricamento del file FXML `LobbyView.fxml`.
+     * 3. Recupera il relativo `LobbyController` e gli passa il riferimento alla connessione di rete corrente.
+     * 4. Registra il nuovo controller dentro `ClientConnection`.
+     * 5. Estrae lo `Stage` corrente a partire dai nodi grafici e vi imposta la nuova scena della Lobby ricentrandola.
+     * @param connessione La connessione di rete di tipo ClientConnection attualmente attiva.
+     * @param ruolo Il ruolo del profilo utente convalidato dal server.
+     */
     public void gestisciLoginSuccess(ClientConnection connessione, String ruolo) {
     try {
-
-            // Se l'utente è un ADMIN, blocchiamo l'accesso!
             if (ruolo.equals("ADMIN")) {
                 mostraMessaggioErroreLogin("❌ Accesso negato: l'acesso è riservato ai Player.");
-                return; // Interrompe il metodo ed evita il cambio di scena
+                return; 
             }
-        
-        // 1. Carica il file FXML della schermata di gioco
+ 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/LobbyView.fxml"));
             Parent giocoRoot = loader.load();
         
-        // 2. Recupera il controller della lobby
             LobbyController controllerLobby = loader.getController();
             
             controllerLobby.setClientConnection(connessione);
-        // 2. Recupera il controller della schermata di gioco
-             
-        // Aggiorna il riferimento del controller dentro ClientConnection 
-        // in modo che i messaggi successivi (es. START_GAME, CLASSIFICA) vadano alla nuova schermata
+  
             connessione.setControllerLobby(controllerLobby);
         
-        // 4. Recupera lo Stage corrente
-        // Puoi farlo usando un qualsiasi nodo grafico presente nella tua AuthView (es. txtUsername o un bottone)
             Stage stage = (Stage) paneLogin.getScene().getWindow(); 
         
-        // 5. Crea la nuova scena e mostra lo stage aggiornato
             Scene scenaGioco = new Scene(giocoRoot);
             stage.setScene(scenaGioco);
             stage.setTitle("Guess The Word - Lobby di Attesa");
@@ -158,12 +228,17 @@ public class AuthController implements Initializable {
     }
     
     /**
-     * Metodo di utility richiamabile dalla rete se la registrazione fallisce o ha successo
+     * @brief Metodo di utility per impostare un testo d'errore nel form di registrazione.
+     * @param msg Il messaggio testuale da visualizzare.
      */
     public void mostraMessaggioErroreReg(String msg) {
         lblErroreReg.setText(msg);
     }
     
+    /**
+     * @brief Metodo di utility per impostare un testo d'errore nel form di login.
+     * @param msg Il messaggio testuale da visualizzare.
+     */
     public void mostraMessaggioErroreLogin(String msg) {
         lblErroreLogin.setText(msg);
     }

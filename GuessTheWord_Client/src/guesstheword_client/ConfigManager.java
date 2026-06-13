@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
+ * @class ConfigManager
  * @brief Gestore della configurazione del client.
  * * Questa classe si occupa di caricare le impostazioni dell'applicazione (IP e porta del server)
  * da un file di configurazione esterno, se il file non esiste, definisce dei valori di fallback.
