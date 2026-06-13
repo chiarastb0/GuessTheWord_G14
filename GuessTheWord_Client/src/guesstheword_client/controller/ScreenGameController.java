@@ -5,11 +5,17 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class ScreenGameController implements Initializable {
@@ -85,18 +91,21 @@ public class ScreenGameController implements Initializable {
         String testoAvviso = parti[2]; // La spiegazione
 
         // Platform.runLater forza l'aggiornamento sulla coda grafica di JavaFX
-        javafx.application.Platform.runLater(() -> {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        Platform.runLater(() -> {
+            if (timeline != null) {
+                timeline.stop(); // Fermiamo il timer locale per sicurezza
+            }
+            Alert alert = new Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
             alert.setHeaderText("Partita Terminata!");
             alert.setContentText(testoAvviso);
 
             // Personalizziamo il titolo della finestrella in base all'esito
             switch (esito) {
                 case "VITTORIA":
-                    alert.setTitle("🏆 Hai Vinto!");
+                    alert.setTitle("Hai Vinto!");
                     break;
                 case "SCONFITTA":
-                    alert.setTitle("❌ Hai Perso!");
+                    alert.setTitle("Hai Perso!");
                     break;
                 case "PAREGGIO":
                     alert.setTitle("⏱️ Pareggio!");
@@ -105,6 +114,35 @@ public class ScreenGameController implements Initializable {
 
             // Mostriamo il pop-up e aspettiamo che l'utente clicchi OK
             alert.showAndWait();
+            // 🔥 SEZIONE RITORNO ALLA LOBBY DINAMICO
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/LobbyView.fxml"));
+                Parent lobbyRoot = loader.load();
+
+                LobbyController controllerLobby = loader.getController();
+                
+                // Rincrociamo i riferimenti di ascolto di ClientConnection alla lobby
+                controllerLobby.setClientConnection(clientConnection);
+                clientConnection.setControllerLobby(controllerLobby);
+                clientConnection.setControllerGioco(null); // Sganciamo il gioco vecchio
+
+                // Recuperiamo lo Stage attuale partendo da un nodo della schermata di gioco
+                Stage stage = (Stage) txtAreaSfida.getScene().getWindow();
+                Scene scenaLobby = new Scene(lobbyRoot);
+                stage.setScene(scenaLobby);
+                stage.setTitle("Guess The Word - Lobby di Attesa");
+                stage.centerOnScreen();
+                stage.show();
+
+                System.out.println("[GUI] Ritorno alla lobby completato con successo.");
+                
+                clientConnection.spedisciMessaggio("RICHIESTA_STORICO");
+                clientConnection.spedisciMessaggio("RICHIESTA_CLASSIFICA");
+
+            } catch (Exception e) {
+                System.err.println("Errore durante il ritorno automatico alla lobby: " + e.getMessage());
+                e.printStackTrace();
+            }
         });
     }
     

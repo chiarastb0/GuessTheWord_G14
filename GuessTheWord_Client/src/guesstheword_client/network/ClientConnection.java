@@ -210,36 +210,30 @@ public class ClientConnection implements Runnable {
             case "FINE_PARTITA":
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
                 if (controllerGioco != null) {
-                    // Passiamo l'intero messaggio al controller grafico
-                    controllerGioco.gestisciFinePartita(messaggio); 
+                    final String messaggioFinale = messaggio;
+                    // Passiamo il controllo al controller di gioco per il pop-up e lo smistamento
+                    Platform.runLater(() -> {
+                        controllerGioco.gestisciFinePartita(messaggioFinale);
+                    });
                 }
                 break;
 
             case "DATI_CLASSIFICA":
-                // Formato atteso dal Server: DATI_CLASSIFICA:posizione,username,punti;posizione,username,punti;...
-                if (parti.length >= 2 && controllerLobby != null) {
+                if (parti.length >= 2) {
                     String contenuto = parti[1];
-                    String[] righeGiocatori = contenuto.split(";");
-                    
-                    if (contenuto.equalsIgnoreCase("VUOTO")) {
+                    if (controllerLobby != null) {
                         Platform.runLater(() -> {
-                            System.out.println("[LOBBY] Nessun utente è ancora presente in classifica.");
-                        });
-                    } else {
-                        // Usiamo Platform.runLater per aggiornare in sicurezza la TableView
-                        Platform.runLater(() -> {
-                            // Puliamo la classifica prima di aggiornarla per evitare duplicati grafici
-                            controllerLobby.tabellaClassifica.getItems().clear();
-                            
-                            for (String riga : righeGiocatori) {
-                                if (!riga.trim().isEmpty()) {
-                                    String[] dati = riga.split(",");
-                                    int pos = Integer.parseInt(dati[0]);
-                                    String username = dati[1];
-                                    int punti = Integer.parseInt(dati[2]);
-                                    
-                                    // Inietta la riga nel controller
-                                    controllerLobby.aggiungiGiocatoreAClassifica(pos, username, punti);
+                            controllerLobby.svuotaClassifica(); // Puliamo la classifica vecchia!
+                            if (!contenuto.equalsIgnoreCase("VUOTO")) {
+                                String[] righeGiocatori = contenuto.split(";");
+                                for (String riga : righeGiocatori) {
+                                    if (!riga.trim().isEmpty()) {
+                                        String[] dati = riga.split(",");
+                                        int pos = Integer.parseInt(dati[0]);
+                                        String username = dati[1];
+                                        int punti = Integer.parseInt(dati[2]);
+                                        controllerLobby.aggiungiGiocatoreAClassifica(pos, username, punti);
+                                    }
                                 }
                             }
                         });
@@ -253,7 +247,10 @@ public class ClientConnection implements Runnable {
 
                  if (controllerLobby != null) {
                      // Finestra già aperta, stampiamo subito
-                     Platform.runLater(() -> elaboraStoricoGrafica(contenutoStorico));
+                    Platform.runLater(() -> {
+                            controllerLobby.svuotaStorico(); // Puliamo lo storico vecchio!
+                            elaboraStoricoGrafica(contenutoStorico);
+                        });
                  } else {
                      // Finestra in caricamento, salviamo i dati in memoria
                      this.cacheStorico = contenutoStorico;

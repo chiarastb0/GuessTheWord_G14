@@ -144,6 +144,20 @@ public class LobbyController implements Initializable {
         PartitaStorico nuovaRiga = new PartitaStorico(data, parola, esito, punteggio);
         datiStorico.add(nuovaRiga);
     }
+    
+    /**
+     * Svuota completamente la lista dei dati storici personali
+     */
+    public void svuotaStorico() {
+        this.datiStorico.clear();
+    }
+
+    /**
+     * Svuota completamente la lista della classifica globale
+     */
+    public void svuotaClassifica() {
+        this.datiClassifica.clear();
+    }
 
 
 }

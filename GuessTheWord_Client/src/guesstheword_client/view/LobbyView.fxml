@@ -19,7 +19,7 @@
                <children>
                   <VBox alignment="CENTER" spacing="25.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 40;" AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="50.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="50.0">
                      <children>
-                        <Label fx:id="lblBenvenuto" text="👋 Benvenuto nella Lobby!" textFill="#1E3A8A">
+                        <Label fx:id="lblBenvenuto" text="Benvenuto nella Lobby!" textFill="#1E3A8A">
                            <font>
                               <Font name="System Bold" size="28.0" />
                            </font>
