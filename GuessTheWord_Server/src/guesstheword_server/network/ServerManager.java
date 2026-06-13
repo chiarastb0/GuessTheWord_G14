@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package guesstheword_server.network;
 
 import guesstheword_server.ConfigManager;
@@ -17,28 +12,40 @@ import java.net.Socket;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Gestore centrale del Server (Core Engine).
+ * Accetta le connessioni in entrata, gestisce la coda di matchmaking (Lobby) 
+ * e orchestra l'intera logica di gioco (estrazione parole, timer, calcolo punteggi).
+ * * @author angel
+ */
 public class ServerManager {
+    
     private boolean inEsecuzione = true;
     private final List<ClientHandler> clientConnessi = new ArrayList<>();
     private final List<ClientHandler> giocatoriPronti = new ArrayList<>();
     
-    //VARIABILI PER LA GESTIONE DELLA SFIDA
+    // VARIABILI DI CONFIGURAZIONE GLOBALE (Gestite dall'Admin)
     private Map<String, Long> dizionarioAttivo;
-    private String testoIntegraleAttivo; // Contiene l'intero file .txt
+    private String testoIntegraleAttivo; 
     
-    // Stato della partita corrente
-    private String difficoltaCorrente = "Facile"; // Impostato dall'Admin
-    private final Map<String, String> mappaParoleSegrete = new HashMap<>(); // Chiave: Parola Chiara, Valore: Parola Cifrata
-    // Mappa che associa a ogni giocatore il SUO set di parole indovinate
+    // STATO DELLA PARTITA CORRENTE
+    private String difficoltaCorrente = "Facile"; 
+    
+    // Mappa per associare la parola in chiaro alla sua versione cifrata con il Cifrario di Cesare
+    private final Map<String, String> mappaParoleSegrete = new HashMap<>(); 
+    
+    // Mappa vitale per isolare i progressi: associa ad ogni singolo socket il SUO cesto di parole indovinate
     private final Map<ClientHandler, Set<String>> progressiGiocatori = new HashMap<>();
     
     private boolean partitaInCorso = false;
     private Timer timerPartita;
     private long timestampInizioSfida;
-    private final int DURATA_TIMER = 60; // 60 secondi standard
+    private final int DURATA_TIMER = 60; // Durata fissa della partita in secondi
 
     /**
-     * Riceve la configurazione iniziale dall'interfaccia Admin
+     * Riceve e memorizza il dizionario e il testo caricati dall'interfaccia dell'Amministratore.
+     * * @param dizionario Mappa contenente le parole e la loro frequenza assoluta.
+     * @param testoIntegrale Il contenuto testuale grezzo del file .txt caricato.
      */
     public void setDatiSfida(Map<String, Long> dizionario, String testoIntegrale) {
         this.dizionarioAttivo = dizionario;
@@ -47,13 +54,19 @@ public class ServerManager {
     }
 
     /**
-     * Permette all'interfaccia Admin di impostare la difficoltà prima del matchmaking
+     * Aggiorna la difficoltà globale del server in tempo reale.
+     * * @param difficolta La stringa rappresentante il livello (es. "Media").
      */
     public void setDifficoltaCorrente(String difficolta) {
         this.difficoltaCorrente = difficolta;
         System.out.println("[SERVER] Difficoltà impostata a: " + difficoltaCorrente);
     }
 
+    /**
+     * Punto di ingresso principale del Server.
+     * Apre la porta di rete e resta in ascolto infinito di nuovi client,
+     * assegnando ciascuno a un Thread separato (ClientHandler).
+     */
     public void start() {
         int port = ConfigManager.getServerPort(); 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
@@ -65,6 +78,8 @@ public class ServerManager {
                 
                 ClientHandler handler = new ClientHandler(clientSocket, this);
                 clientConnessi.add(handler);
+                
+                // Avvia la gestione di questo specifico client su un percorso asincrono
                 new Thread(handler).start();
             }
         } catch (IOException e) {
@@ -72,15 +87,22 @@ public class ServerManager {
         }
     }
 
+    /**
+     * Motore di Matchmaking: inserisce gli utenti in attesa in una coda.
+     * Non appena la coda raggiunge 2 giocatori, innesca l'inizio della partita.
+     * I metodi synchronized prevengono problemi di concorrenza se due client cliccano contemporaneamente.
+     * * @param handler Il client che ha richiesto di giocare.
+     */
     public synchronized void aggiungiGiocatorePronto(ClientHandler handler) {
         if (!giocatoriPronti.contains(handler)) {
             giocatoriPronti.add(handler);
             System.out.println("[SERVER] Giocatore pronto: " + handler.getUsernameUtente() + " (" + giocatoriPronti.size() + "/2)");
             
             if (giocatoriPronti.size() == 2) {
+                // Lanciamo l'avvio della sfida su un thread separato per non bloccare l'accettazione di altri comandi
                 new Thread(() -> {
                     try {
-                        Thread.sleep(1000); // Pausa di sincronizzazione per JavaFX
+                        Thread.sleep(1000); // Piccola pausa estetica per permettere ai client di caricare la View
                     } catch (InterruptedException e) { }
                     avviaSfidaDinamica();
                 }).start();
@@ -89,118 +111,104 @@ public class ServerManager {
     }
 
     /**
-     * Algoritmo di estrazione e cifratura basato sui 4 parametri del professore
+     * Cuore logico del gioco. Implementa l'algoritmo di estrazione delle parole, 
+     * il calcolo della difficoltà e l'offuscamento tramite crittografia.
      */
     private void avviaSfidaDinamica() {
 
-        // Reset dei contenitori di stato
+        // 1. Pulizia totale della RAM per evitare sovrapposizioni con partite precedenti
         mappaParoleSegrete.clear();
         progressiGiocatori.clear();
         
-        // Creiamo un cesto vuoto personale per ogni giocatore connesso
+        // Assegna un cesto vuoto (HashSet) a ciascun giocatore per tracciare cosa ha indovinato
         for (ClientHandler gh : giocatoriPronti) {
             progressiGiocatori.put(gh, new HashSet<>());
         }
         
         // =========================================================================
-        // GESTIONE FALLBACK PERSONALIZZATO (Se non è stato caricato alcun file .txt)
+        // GESTIONE FALLBACK DI SICUREZZA
+        // Se l'admin avvia il server senza caricare file, evitiamo il crash del sistema
+        // fornendo una partita di emergenza predefinita.
         // =========================================================================
         if (dizionarioAttivo == null || dizionarioAttivo.isEmpty() || testoIntegraleAttivo == null) {
-            // Impostiamo la tua frase fissa come testo attivo per la sfida
             this.testoIntegraleAttivo = "Non Fare l'avvocato delle cause perse";
             
-            // Rispettiamo i parametri dello shift di Cesare in base alla difficoltà impostata
             int shiftMin = 1, shiftMax = 3;
             switch (difficoltaCorrente.toUpperCase()) {
-                case "MEDIA":
-                    shiftMin = 4; shiftMax = 7;
-                    break;
-                case "DIFFICILE":
-                    shiftMin = 8; shiftMax = 12;
-                    break;
-                case "FACILE":
-                default:
-                    shiftMin = 1; shiftMax = 3;
-                    break;
+                case "MEDIA": shiftMin = 4; shiftMax = 7; break;
+                case "DIFFICILE": shiftMin = 8; shiftMax = 12; break;
+                case "FACILE": default: shiftMin = 1; shiftMax = 3; break;
             }
             
             Random random = new Random();
             int shiftEffettivo = random.nextInt((shiftMax - shiftMin) + 1) + shiftMin;
             
-            // Cifriamo la parola fissa "avvocato"
             String parolaCifrata = CifrarioUtils.cifratura("avvocato", shiftEffettivo);
             mappaParoleSegrete.put("avvocato", parolaCifrata);
 
             this.partitaInCorso = true;
             this.timestampInizioSfida = System.currentTimeMillis();
 
-            // Attivazione del Timer asincrono di 60 secondi
             if (timerPartita != null) timerPartita.cancel();
             timerPartita = new Timer();
             timerPartita.schedule(new TimerTask() {
                 @Override
-                public void run() {
-                    terminaPartitaPareggio();
-                }
+                public void run() { terminaPartitaPareggio(); }
             }, DURATA_TIMER * 1000L);
 
             System.out.println("[SERVER] Nessun file caricato. Avvio partita di fallback (" + difficoltaCorrente + "). Parola fissa: avvocato");
-
-            // Inviamo il pacchetto iniziale con la frase e la parola nascosta ai client ed interrompiamo il metodo
             inviaStatoGiocoAiClient();
-            return; 
+            
+            return; // Terminiamo qui l'esecuzione per questa partita di emergenza
         }
+        // =========================================================================
 
-        // 1. Configurazione dei parametri in base alla difficoltà
+        // 2. Configurazione Dinamica dei Parametri (Algoritmo principale)
         int numeroParoleDaEstrarre = 1;
-        int lunghezzaMinima = 4;
-        int lunghezzaMassima = 6;
+        int lunghezzaMinima = 4, lunghezzaMassima = 6;
         int shiftMin = 1, shiftMax = 3;
         
-        // Determiniamo la soglia di frequenza (rara vs comune) ordinando le parole
+        // Ordina il dizionario per frequenza decrescente (le più usate in cima)
         List<Map.Entry<String, Long>> elencoOrdinato = new ArrayList<>(dizionarioAttivo.entrySet());
-        elencoOrdinato.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue())); // Decrescente (più frequenti in cima)
+        elencoOrdinato.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue())); 
 
         int dimensioneDizionario = elencoOrdinato.size();
         int indiceInizioSoglia = 0;
         int indiceFineSoglia = dimensioneDizionario;
 
+        // Modulazione delle regole in base alla scelta dell'Admin
         switch (difficoltaCorrente.toUpperCase()) {
             case "MEDIA":
                 numeroParoleDaEstrarre = 2;
-                lunghezzaMinima = 7;
-                lunghezzaMassima = 9;
+                lunghezzaMinima = 7; lunghezzaMassima = 9;
                 shiftMin = 4; shiftMax = 7;
-                // Prendiamo la fascia media di frequenza (centrale)
+                // Parole mediamente utilizzate (taglio del 30% dai due estremi)
                 indiceInizioSoglia = (int) (dimensioneDizionario * 0.3);
                 indiceFineSoglia = (int) (dimensioneDizionario * 0.7);
                 break;
                 
             case "DIFFICILE":
                 numeroParoleDaEstrarre = 3;
-                lunghezzaMinima = 10;
-                lunghezzaMassima = 30; // Parole lunghe o composte
+                lunghezzaMinima = 10; lunghezzaMassima = 30; 
                 shiftMin = 8; shiftMax = 12;
-                // Parole rare (in fondo alla classifica delle frequenze)
+                // Parole rare (prendiamo solo l'ultimo 30% della classifica)
                 indiceInizioSoglia = (int) (dimensioneDizionario * 0.7);
                 break;
                 
             case "FACILE":
             default:
                 numeroParoleDaEstrarre = 1;
-                lunghezzaMinima = 4;
-                lunghezzaMassima = 6;
+                lunghezzaMinima = 4; lunghezzaMassima = 6;
                 shiftMin = 1; shiftMax = 3;
-                // Parole molto comuni (in cima alla classifica)
+                // Parole comunissime (il primo 30% della classifica)
                 indiceFineSoglia = (int) (dimensioneDizionario * 0.3);
                 break;
         }
 
-        // Isoliamo il pool di parole idonee
+        // 3. Estrazione e Filtraggio
         List<String> poolIdonee = new ArrayList<>();
         if (indiceInizioSoglia >= indiceFineSoglia || indiceInizioSoglia >= dimensioneDizionario) {
-            indiceInizioSoglia = 0;
-            indiceFineSoglia = dimensioneDizionario;
+            indiceInizioSoglia = 0; indiceFineSoglia = dimensioneDizionario;
         }
         
         for (int i = indiceInizioSoglia; i < indiceFineSoglia; i++) {
@@ -210,7 +218,8 @@ public class ServerManager {
             }
         }
 
-        // Meccanismo di ripiego (Fallback) se il testo è troppo corto e il filtro è vuoto
+        // Meccanismo di sicurezza: se il testo caricato è troppo breve e non ci sono parole idonee ai filtri, 
+        // rimuoviamo i filtri per garantire l'avvio della partita.
         if (poolIdonee.size() < numeroParoleDaEstrarre) {
             poolIdonee.clear();
             for (Map.Entry<String, Long> entry : elencoOrdinato) {
@@ -218,7 +227,7 @@ public class ServerManager {
             }
         }
 
-        // 2. Estrazione effettiva e applicazione del Cifrario di Cesare
+        // 4. Crittografia e Salvataggio in Mappa
         Collections.shuffle(poolIdonee);
         Random random = new Random();
         
@@ -232,24 +241,21 @@ public class ServerManager {
         this.partitaInCorso = true;
         this.timestampInizioSfida = System.currentTimeMillis();
 
-        // 3. Attivazione del Timer asincrono
+        // 5. Innesco del Time-out (Asincrono)
         if (timerPartita != null) timerPartita.cancel();
         timerPartita = new Timer();
         timerPartita.schedule(new TimerTask() {
             @Override
-            public void run() {
-                terminaPartitaPareggio();
-            }
+            public void run() { terminaPartitaPareggio(); }
         }, DURATA_TIMER * 1000L);
 
         System.out.println("[SERVER] Sfida avviata (" + difficoltaCorrente + "). Parole segrete: " + mappaParoleSegrete.keySet());
 
-        // Invia il pacchetto iniziale generato
         inviaStatoGiocoAiClient();
     }
 
     /**
-     * Cicla i giocatori e invia a ciascuno il SUO stato personale
+     * Funzione ponte: cicla tutti i giocatori attualmente in lobby e inoltra il calcolo visivo.
      */
     private void inviaStatoGiocoAiClient() {
         for (ClientHandler giocatore : giocatoriPronti) {
@@ -258,7 +264,10 @@ public class ServerManager {
     }
 
     /**
-     * Costruisce il testo in base alle parole indovinate DAL SINGOLO GIOCATORE
+     * Genera la vista "soggettiva" del file di testo per un singolo giocatore.
+     * Sostituisce le parole segrete con le parentesi cifrate [ xxxx ] 
+     * o le rivela con gli asterischi *XXXX* se il giocatore le ha indovinate.
+     * * @param giocatore Il client a cui calcolare e spedire lo stato.
      */
     private void inviaStatoGiocoPersonale(ClientHandler giocatore) {
         String testoDaInviare = this.testoIntegraleAttivo;
@@ -269,6 +278,7 @@ public class ServerManager {
             String cifrata = entry.getValue();
 
             if (sueParole != null && sueParole.contains(chiara)) {
+                // Regex (?i)\\b garantisce che venga sostituita la parola esatta (case-insensitive) e non sue sottostringhe
                 testoDaInviare = testoDaInviare.replaceAll("(?i)\\b" + chiara + "\\b", "*" + chiara.toUpperCase() + "*");
             } else {
                 testoDaInviare = testoDaInviare.replaceAll("(?i)\\b" + chiara + "\\b", "[ " + cifrata + " ]");
@@ -283,7 +293,10 @@ public class ServerManager {
     }
 
     /**
-     * Verifica i tentativi inoltrati dai singoli ClientHandler
+     * Intercetta la parola digitata da un client e ne verifica la correttezza.
+     * Metodo sincronizzato per evitare che due client vincano nello stesso esatto millisecondo.
+     * * @param giocatore Il client che ha tentato la risposta.
+     * @param tentativo La parola scritta.
      */
     public synchronized void verificaTentativo(ClientHandler giocatore, String tentativo) {
         if (!partitaInCorso) return;
@@ -291,17 +304,17 @@ public class ServerManager {
         String pulito = tentativo.trim().toLowerCase();
         Set<String> sueParole = progressiGiocatori.get(giocatore);
 
-        // Verifichiamo se la parola è segreta ed è ancora da indovinare PER QUESTO GIOCATORE
+        // Controllo: la parola esiste nella mappa segreta? Ed è la prima volta che la indovina?
         if (sueParole != null && mappaParoleSegrete.containsKey(pulito) && !sueParole.contains(pulito)) {
-            sueParole.add(pulito);
+            sueParole.add(pulito); // Aggiunge la parola al "cesto" del giocatore
             System.out.println("[GIOCO] " + giocatore.getUsernameUtente() + " ha scovato: " + pulito + " (" + sueParole.size() + "/" + mappaParoleSegrete.size() + ")");
 
+            // Verifica Condizione di Vittoria: ha trovato TUTTE le parole?
             if (sueParole.size() == mappaParoleSegrete.size()) {
                 terminaPartitaVittoria(giocatore);
             } else {
-                // Notifichiamo SOLO chi ha indovinato la parola
+                // Se mancano ancora parole, aggiorna lo schermo SOLO a chi ha indovinato
                 giocatore.inviaMessaggio("NOTIFICA:Ottimo! Hai decifrato la parola '" + pulito.toUpperCase() + "'!");
-                // Aggiorniamo SOLO la sua interfaccia grafica
                 inviaStatoGiocoPersonale(giocatore);
             }
         } else {
@@ -309,10 +322,15 @@ public class ServerManager {
         }
     }
 
+    /**
+     * Gestisce la chiusura della partita quando qualcuno vince.
+     * Ferma i timer, avvisa il vincitore e lo sconfitto, e innesca il salvataggio sul database.
+     * * @param vincitore Il client che ha completato per primo il set di parole.
+     */
     private synchronized void terminaPartitaVittoria(ClientHandler vincitore) {
         if (!partitaInCorso) return;
         partitaInCorso = false;
-        timerPartita.cancel();
+        timerPartita.cancel(); // Blocca lo scadere del tempo
 
         String elencoCompletoParole = String.join(", ", mappaParoleSegrete.keySet()).toUpperCase();
         System.out.println("[FINE PARTITA] Ha vinto " + vincitore.getUsernameUtente());
@@ -329,6 +347,9 @@ public class ServerManager {
         resetPartita();
     }
 
+    /**
+     * Gestisce la chiusura della partita in caso di scadenza del Timer.
+     */
     private synchronized void terminaPartitaPareggio() {
         if (!partitaInCorso) return;
         partitaInCorso = false;
@@ -340,43 +361,48 @@ public class ServerManager {
             giocatore.inviaMessaggio("FINE_PARTITA:PAREGGIO:Tempo scaduto! Non avete trovato tutte le parole. Soluzione: " + elencoCompletoParole);
         }
         
-        salvaDatiNelDatabase(null);
+        salvaDatiNelDatabase(null); // null indica che non c'è vincitore
         resetPartita();
     }
 
+    /**
+     * Calcola i punteggi in base al tempo e salva i record definitivi tramite il DAO.
+     * * @param vincitore Il client vincitore (o null in caso di pareggio).
+     */
     private void salvaDatiNelDatabase(ClientHandler vincitore) {
         try {
             PartitaDAO partitaDAO = new PartitaDAO();
             RisultatoDAO risultatoDAO = new RisultatoDAO();
 
             String dataOra = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            // Aggreghiamo l'elenco delle parole separate da virgola per memorizzarlo nel DB
             String paroleUnite = String.join(",", mappaParoleSegrete.keySet());
             
-            // Passiamo anche la difficoltà corrente al costruttore della Partita
+            // Creazione riga madre (Partita) per ottenere la Foreign Key (idPartita)
             Partita nuovaPartita = new Partita(dataOra, paroleUnite, this.difficoltaCorrente);
-            
             long idPartita = partitaDAO.inserisciERestituisciId(nuovaPartita);
             if (idPartita == -1) return;
             
-            // moltiplicatore di difficoltà per calcolo punteggio
+            // Impostazione del moltiplicatore per bilanciare i punti in base alla difficoltà
             int moltiplicatore = 1;
             if(this.difficoltaCorrente.equalsIgnoreCase("Media")) 
                 moltiplicatore = 2;
             else if (this.difficoltaCorrente.equalsIgnoreCase("Difficile"))
                 moltiplicatore = 3;
 
+            // Creazione riga figlia (Risultato) per ciascun giocatore connesso
             for (ClientHandler giocatore : giocatoriPronti) {
                 String esito = "PAREGGIO";
                 int tempoGiocatore = DURATA_TIMER * 1000; 
-                int puntiAssegnati = 0; //punti di default!
+                int puntiAssegnati = 0; // Se perdi o pareggi prendi 0
 
                 if (vincitore != null) {
                     if (giocatore == vincitore) {
                         esito = "VITTORIA";
+                        // Calcolo tempo reale in millisecondi
                         tempoGiocatore = (int)(System.currentTimeMillis() - timestampInizioSfida); 
                         
-                        // Formula per il punteggio
+                        // Formula Punteggio: (Secondi Rimanenti) * Moltiplicatore Difficoltà
+                        // Esempio: Indovina in 20s in mod. Media. (60 - 20) * 2 = 80 Punti!
                         int tempoTrascorsoSec = tempoGiocatore / 1000;
                         puntiAssegnati = (DURATA_TIMER - tempoTrascorsoSec) * moltiplicatore;
                     } else {
@@ -393,16 +419,24 @@ public class ServerManager {
         }
     }
     
+    /**
+     * Sistema Anti-Duplicazione: Verifica se l'utente che sta tentando il login 
+     * ha già una sessione attiva da un'altra finestra o PC.
+     * * @param username Il nome utente da controllare.
+     * @return true se l'utente è già online, false altrimenti.
+     */
     public boolean isGiocatoreGiaConnesso(String username) {
-    // Cicliamo su tutti i client attualmente connessi al server
         for (ClientHandler client : clientConnessi) { 
             if (client.getUsernameUtente().equalsIgnoreCase(username)) {
-                return true; // Trovato! L'utente ha già una sessione attiva
+                return true; 
             }
         }
         return false;
     }
 
+    /**
+     * Libera la Lobby e la RAM preparando il server per un nuovo giro di Matchmaking.
+     */
     private void resetPartita() {
         giocatoriPronti.clear();
         mappaParoleSegrete.clear();
@@ -410,11 +444,18 @@ public class ServerManager {
         System.out.println("[SERVER] Lobby ripulita. Pronto per un nuovo set.");
     }
     
+    /**
+     * Rimuove in sicurezza un client disconnesso dalle liste operative.
+     * * @param handler Il client da eliminare.
+     */
     public synchronized void disconnettiClient(ClientHandler handler) {
         clientConnessi.remove(handler);
         giocatoriPronti.remove(handler);
     }
     
+    /**
+     * Interrompe il ciclo di ascolto principale per consentire lo spegnimento.
+     */
     public void fermaServer() {
         this.inEsecuzione = false;
     }

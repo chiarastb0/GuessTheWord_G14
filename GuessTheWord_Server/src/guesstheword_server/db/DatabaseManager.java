@@ -1,27 +1,33 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package guesstheword_server.db;
+
 import guesstheword_server.ConfigManager;
 import java.sql.*;
 
 /**
+ * Classe di utilità per la gestione della connessione al database SQLite.
+ * Fornisce i metodi per aprire, recuperare e chiudere in modo sicuro la connessione.
  *
- * @author angel
  */
 public class DatabaseManager {
+    
     private static Connection conn = null;
     
-    public static Connection  getConnection() throws SQLException {
-        if(conn == null || conn.isClosed()) {
-            try{
+    /**
+     * Recupera la connessione attiva al database.
+     * Se la connessione non è ancora stata creata o risulta chiusa, ne inizializza una nuova
+     * leggendo l'URL di configurazione.
+     * * @return L'oggetto Connection per eseguire le query sul database.
+     * @throws SQLException Se si verifica un errore durante l'accesso al database.
+     */
+    public static Connection getConnection() throws SQLException {
+        if (conn == null || conn.isClosed()) {
+            try {
                 Class.forName("org.sqlite.JDBC");
                 String url = ConfigManager.getDbUrl();
                 conn = DriverManager.getConnection(url);
                 System.out.println("Connessione al database SQLite stabilita con successo.");
             } catch (ClassNotFoundException e) {
-                System.err.println("Driver non trovato: " + e.getMessage());   
+                System.err.println("Driver JDBC non trovato: " + e.getMessage());   
                 e.printStackTrace();
             }
         }
@@ -29,7 +35,7 @@ public class DatabaseManager {
     }
     
     /**
-     * Chiude la connessione al database in modo sicuro.
+     * Chiude la connessione al database in modo sicuro e libera le risorse associate.
      */
     public static void closeConnection() {
         try {
