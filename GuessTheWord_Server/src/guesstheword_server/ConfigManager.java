@@ -19,10 +19,10 @@ public class ConfigManager {
     private static final Properties props = new Properties();
 
     static {
-        try (FileInputStream fis = new FileInputStream("config.properties")) {
+        try (FileInputStream fis = new FileInputStream("server.properties")) {
             props.load(fis);
         } catch (IOException e) {
-            System.err.println("Impossibile caricare config.properties: " + e.getMessage());
+            System.err.println("Impossibile caricare server.properties: " + e.getMessage());
         }
     }
 
