@@ -129,6 +129,25 @@ public class UtenteDAO implements DAO<Utente> {
         }
         return Optional.empty();
     }
+    
+    public boolean esisteUsername(String username) throws SQLException {
+        // Adatta il nome della tabella (es. utenti) e della colonna (es. username) al tuo database
+        String query = "SELECT COUNT(*) FROM UTENTE WHERE username = ?";
+    
+        try (Connection conn = DatabaseManager.getConnection(); 
+         PreparedStatement ps = conn.prepareStatement(query)) {
+        
+        ps.setString(1, username);
+        
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                // Se il conteggio è maggiore di 0, l'username esiste già
+                return rs.getInt(1) > 0;
+                }
+            }   
+        }
+        return false;
+    }
         
      /**
      * Recupera la classifica globale di tutti gli utenti ordinati per punteggio decrescente.

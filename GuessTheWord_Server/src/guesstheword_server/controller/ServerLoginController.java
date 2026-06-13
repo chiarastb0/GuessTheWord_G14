@@ -58,7 +58,7 @@ public class ServerLoginController implements Initializable {
 
                 // Controllo di sicurezza: verifichiamo che sia DAVVERO un ADMIN
                 if (admin.getRuolo().equalsIgnoreCase("ADMIN")) {
-                    lblErroreAdmin.setText("  Accesso autorizzato. Avvio dashboard...");
+                    lblErroreAdmin.setText("Accesso autorizzato. Avvio dashboard...");
                     
                     // Carichiamo la console principale del server (es. ServerDashboardView)
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_server/view/AdminDashboard.fxml"));
@@ -74,7 +74,7 @@ public class ServerLoginController implements Initializable {
                     
                 } else {
                     // Se un normale player tenta di loggarsi dall'eseguibile server, lo blocchiamo!
-                    lblErroreAdmin.setText("❌ Errore: Questo account non ha i privilegi di Admin.");
+                    lblErroreAdmin.setText("Errore: Questo account non ha i privilegi di Admin.");
                 }
             } else {
                 lblErroreAdmin.setText("❌ Username o Password errati.");
@@ -83,7 +83,7 @@ public class ServerLoginController implements Initializable {
         } catch (Exception e) {
             System.err.println("[SERVER LOGIN] Eccezione durante l'autenticazione: " + e.getMessage());
             e.printStackTrace();
-            lblErroreAdmin.setText("❌ Errore critico di connessione al Database.");
+            lblErroreAdmin.setText("Errore critico di connessione al Database.");
         }
     }
 }
