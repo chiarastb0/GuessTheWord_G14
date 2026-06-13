@@ -5,6 +5,7 @@
  */
 package guesstheword_server.db;
 import guesstheword_server.model.Utente;
+import static guesstheword_server.utils.PasswordUtils.hashPassword;
 import java.sql.*;
 import java.util.*;
 
@@ -113,11 +114,18 @@ public class UtenteDAO implements DAO<Utente> {
     
     public Optional<Utente> login(String username, String password) {
         String sql = "SELECT * FROM UTENTE WHERE username = ? AND password = ?";
+        
         try (Connection connection = DatabaseManager.getConnection();
             PreparedStatement cmd = connection.prepareStatement(sql)) {
-        
+            
+            String passwordCifrata = hashPassword(password, username);
+
+            // RIGA DA AGGIUNGERE PER IL DEBUG:
+    System.out.println("[DEBUG LOGIN] Cerco Username: " + username);
+    System.out.println("[DEBUG LOGIN] Hash calcolato da Java: " + passwordCifrata);
+    
             cmd.setString(1, username);
-            cmd.setString(2, password);
+            cmd.setString(2, passwordCifrata);
         
             try (ResultSet rs = cmd.executeQuery()) {
                 if (rs.next()) {
