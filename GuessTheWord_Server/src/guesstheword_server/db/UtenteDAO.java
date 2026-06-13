@@ -134,33 +134,49 @@ public class UtenteDAO implements DAO<Utente> {
      * Recupera la classifica globale di tutti gli utenti ordinati per punteggio decrescente.
      * Formato: posizione,username,punti;posizione,username,punti;...
      */
+    /**
+     * Calcola la somma dei punti di ogni giocatore e restituisce la classifica formattata.
+     */
     public String getClassificaGlobaleFormattata() {
-        StringTokenizer stringaFormattata = new StringTokenizer(""); // Strumento o StringJoiner
-        StringJoiner sj = new StringJoiner(";");
+        StringBuilder sb = new StringBuilder();
         
-        // Se la colonna dei punti totali è dentro la tabella UTENTE (es. punti_totali)
-        String sql = "SELECT username, punti_totali FROM UTENTE ORDER BY punti_totali DESC";
-        
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement cmd = connection.prepareStatement(sql);
-             ResultSet rs = cmd.executeQuery()) {
-            
+        // Usiamo SUM() per sommare i punti e GROUP BY per raggrupparli per utente.
+        // I nomi completi delle tabelle evitano il famoso errore di sintassi SQLite.
+        String sql = "SELECT UTENTE.username, SUM(RISULTATO.punteggio) AS punti_totali " +
+                     "FROM UTENTE " +
+                     "JOIN RISULTATO ON UTENTE.id_utente = RISULTATO.id_utente " +
+                     "GROUP BY UTENTE.id_utente, UTENTE.username " +
+                     "ORDER BY punti_totali DESC";
+
+        try (java.sql.Connection conn = DatabaseManager.getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql);
+             java.sql.ResultSet rs = pstmt.executeQuery()) {
+
             int posizione = 1;
+            boolean hasData = false;
+            
             while (rs.next()) {
+                hasData = true;
                 String username = rs.getString("username");
-                int punti = rs.getInt("punti_totali");
-                
-                // Crea la riga separata da virgole
-                sj.add(posizione + "," + username + "," + punti);
+                int puntiTotali = rs.getInt("punti_totali");
+
+                // Assembliamo la stringa nel formato: posizione,username,punti;
+                sb.append(posizione).append(",")
+                  .append(username).append(",")
+                  .append(puntiTotali).append(";");
+                  
                 posizione++;
             }
             
-        } catch (SQLException exc) {
-            throw new DBException("Errore nel recupero della classifica globale", exc);
+            if (!hasData) {
+                return "VUOTO";
+            }
+            
+        } catch (java.sql.SQLException e) {
+            System.err.println("Errore query classifica: " + e.getMessage());
+            return "VUOTO";
         }
-        
-        // Se la classifica è vuota restituisce una stringa sicura per non far crashare lo split del client
-        return sj.length() > 0 ? sj.toString() : "0,Nessun dato disponibile,0";
+        return sb.toString();
     }
 
     /**
