@@ -92,10 +92,6 @@ public class ServerManager {
      * Algoritmo di estrazione e cifratura basato sui 4 parametri del professore
      */
     private void avviaSfidaDinamica() {
-        if (dizionarioAttivo == null || dizionarioAttivo.isEmpty() || testoIntegraleAttivo == null) {
-            System.err.println("[SERVER ERRORE] Dati mancanti per avviare la sfida!");
-            return;
-        }
 
         // Reset dei contenitori di stato
         mappaParoleSegrete.clear();
@@ -104,6 +100,55 @@ public class ServerManager {
         // Creiamo un cesto vuoto personale per ogni giocatore connesso
         for (ClientHandler gh : giocatoriPronti) {
             progressiGiocatori.put(gh, new HashSet<>());
+        }
+        
+        // =========================================================================
+        // GESTIONE FALLBACK PERSONALIZZATO (Se non è stato caricato alcun file .txt)
+        // =========================================================================
+        if (dizionarioAttivo == null || dizionarioAttivo.isEmpty() || testoIntegraleAttivo == null) {
+            // Impostiamo la tua frase fissa come testo attivo per la sfida
+            this.testoIntegraleAttivo = "Non Fare l'avvocato delle cause perse";
+            
+            // Rispettiamo i parametri dello shift di Cesare in base alla difficoltà impostata
+            int shiftMin = 1, shiftMax = 3;
+            switch (difficoltaCorrente.toUpperCase()) {
+                case "MEDIA":
+                    shiftMin = 4; shiftMax = 7;
+                    break;
+                case "DIFFICILE":
+                    shiftMin = 8; shiftMax = 12;
+                    break;
+                case "FACILE":
+                default:
+                    shiftMin = 1; shiftMax = 3;
+                    break;
+            }
+            
+            Random random = new Random();
+            int shiftEffettivo = random.nextInt((shiftMax - shiftMin) + 1) + shiftMin;
+            
+            // Cifriamo la parola fissa "avvocato"
+            String parolaCifrata = CifrarioUtils.cifratura("avvocato", shiftEffettivo);
+            mappaParoleSegrete.put("avvocato", parolaCifrata);
+
+            this.partitaInCorso = true;
+            this.timestampInizioSfida = System.currentTimeMillis();
+
+            // Attivazione del Timer asincrono di 60 secondi
+            if (timerPartita != null) timerPartita.cancel();
+            timerPartita = new Timer();
+            timerPartita.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    terminaPartitaPareggio();
+                }
+            }, DURATA_TIMER * 1000L);
+
+            System.out.println("[SERVER] Nessun file caricato. Avvio partita di fallback (" + difficoltaCorrente + "). Parola fissa: avvocato");
+
+            // Inviamo il pacchetto iniziale con la frase e la parola nascosta ai client ed interrompiamo il metodo
+            inviaStatoGiocoAiClient();
+            return; 
         }
 
         // 1. Configurazione dei parametri in base alla difficoltà
