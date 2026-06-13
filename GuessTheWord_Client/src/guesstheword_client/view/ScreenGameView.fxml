@@ -21,6 +21,15 @@
                <top>
                   <HBox alignment="CENTER_RIGHT" prefHeight="60.0" prefWidth="800.0" BorderPane.alignment="CENTER">
                      <children>
+                        <Label fx:id="lblNotifica" alignment="CENTER" prefHeight="30.0" style="-fx-font-weight: bold;" text="" textFill="#EF4444">
+                           <font>
+                              <Font name="System Bold" size="16.0" />
+                           </font>
+                           <HBox.margin>
+                              <Insets right="40.0" />
+                           </HBox.margin>
+                        </Label>
+                        
                         <Label alignment="CENTER" contentDisplay="BOTTOM" prefHeight="30.0" style="-fx-font-weight: bold;" text=" Tempo rimasto:      " textFill="#1a4261">
                            <font>
                               <Font name="System Bold" size="18.0" />

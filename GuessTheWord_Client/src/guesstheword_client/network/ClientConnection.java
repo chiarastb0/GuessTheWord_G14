@@ -257,6 +257,15 @@ public class ClientConnection implements Runnable {
                  }
              }
              break;
+             
+            case "RISPOSTA_ERRATA":
+                if (controllerGioco != null) {
+                    Platform.runLater(() -> {
+                        // Facciamo apparire il testo dinamico senza bloccare il gioco!
+                        controllerGioco.mostraMessaggioErroreTemporaneo("Sbagliato, ritenta!");
+                    });
+                }
+                break;
 
             case "ERRORE":
                 System.err.println("[SERVER ERRORE] " + parti[1]);

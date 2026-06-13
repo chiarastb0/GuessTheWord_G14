@@ -24,6 +24,10 @@ public class ScreenGameController implements Initializable {
     @FXML
     private Label lblTimer;
     @FXML
+    private Label lblNotifica; // 🔥 Collegamento alla nuova label FXML
+    @FXML
+    private Timeline timelineErrore; // Gestirà la sparizione del testo errato
+    @FXML
     private TextArea txtAreaSfida;
     @FXML
     private TextField txtRisposta;
@@ -150,7 +154,7 @@ public class ScreenGameController implements Initializable {
      * Aggiorna la casella di testo in tempo reale quando una parola viene svelata
      */
     public void aggiornaTestoDinamicamente(String nuovoTesto) {
-        javafx.application.Platform.runLater(() -> {
+        Platform.runLater(() -> {
             txtAreaSfida.setText(nuovoTesto);
             // Svuota la casella di input per prepararsi alla prossima parola
             txtRisposta.clear(); 
@@ -161,12 +165,32 @@ public class ScreenGameController implements Initializable {
      * Mostra un popup rapido (non bloccante) per informare sui progressi
      */
     public void mostraNotifica(String messaggio) {
-        javafx.application.Platform.runLater(() -> {
+        Platform.runLater(() -> {
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
             alert.setTitle("Aggiornamento Partita");
             alert.setHeaderText(null);
             alert.setContentText(messaggio);
             alert.show(); // Usiamo show() invece di showAndWait() per non bloccare il timer!
         });
+    }
+    
+    /**
+     * Mostra un messaggio dinamico sulla UI che scompare da solo dopo 2 secondi.
+     */
+    public void mostraMessaggioErroreTemporaneo(String messaggio) {
+        // Se c'era già una notifica attiva, la stoppiamo per resettare il tempo
+        if (timelineErrore != null) {
+            timelineErrore.stop();
+        }
+
+        // Impostiamo il testo (il colore rosso è già preimpostato nell'FXML)
+        lblNotifica.setText(messaggio);
+
+        // Creiamo un timer locale di 2 secondi per ripulire la label
+        timelineErrore = new Timeline(new KeyFrame(Duration.seconds(2), event -> {
+            lblNotifica.setText(""); // Cancella il testo allo scadere del tempo
+        }));
+        timelineErrore.setCycleCount(1);
+        timelineErrore.play();
     }
 }
