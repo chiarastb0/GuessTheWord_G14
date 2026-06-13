@@ -32,6 +32,7 @@ public class AuthController implements Initializable {
     @FXML private VBox paneRegistrazione;
     @FXML private TextField txtRegUser;
     @FXML private PasswordField txtRegPass;
+    @FXML private PasswordField txtRegPassConfirm;
     @FXML private Label comboRuolo;
     @FXML private Label lblErroreReg;
 
@@ -86,16 +87,23 @@ public class AuthController implements Initializable {
     void gestisciRegistrazione(ActionEvent event) {
         String user = txtRegUser.getText().trim();
         String pass = txtRegPass.getText().trim();
+        String passConfirm = txtRegPassConfirm.getText().trim();
         String ruolo = comboRuolo.getText().trim();
 
-        if (user.isEmpty() || pass.isEmpty() || ruolo.isEmpty()) {// 
+        // Verifica campi vuoti (incluso il nuovo campo)
+        if (user.isEmpty() || pass.isEmpty() || passConfirm.isEmpty() || ruolo.isEmpty()) {
             lblErroreReg.setText("⚠️ Compila tutti i campi!");
             return;
         }
 
-        // Evitiamo caratteri separatori pericolosi per il protocollo di rete
+        // 🔥 CONTROLLO COERENZA PASSWORD (Intercettato in locale)
+        if (!pass.equals(passConfirm)) {
+            lblErroreReg.setText("Le password inserite non corrispondono.");
+            return;
+        }
+
         if (user.contains(":") || pass.contains(":")) {
-            lblErroreReg.setText("❌ L'uso dei due punti ':' non è consentito.");
+            lblErroreReg.setText(" L'uso dei due punti ':' non è consentito.");
             return;
         }
 
