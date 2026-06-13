@@ -228,11 +228,13 @@ public class ClientHandler implements Runnable {
             inviaMessaggio("ERRORE: Impossibile recuperare lo storico partite.");
         }
     }
+    
     public void inviaMessaggio(String messaggio) {
         try {
             if (out != null) {
                 out.writeObject(messaggio);
                 out.flush();
+                out.reset();
             }
         } catch (IOException e) {
             System.err.println("Errore invio stringa: " + e.getMessage());
