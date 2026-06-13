@@ -19,8 +19,10 @@ public class GuessTheWord_Client extends Application {
         // Recupera il controller 
         AuthController controllerAuth = loader.getController();
         
-        // Fa partire la connessione di rete verso il server (es. localhost, porta 1234)
-        ClientConnection connessione = new ClientConnection("127.0.0.1", 5000);
+        String ipServer = ConfigManager.getServerIp();
+        int portaServer = ConfigManager.getServerPort();
+
+        ClientConnection connessione = new ClientConnection(ipServer, portaServer);
         
         if (connessione.connetti()) {
             // Collega la rete al controller
