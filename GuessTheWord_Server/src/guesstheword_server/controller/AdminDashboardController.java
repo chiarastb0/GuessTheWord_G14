@@ -81,29 +81,10 @@ public class AdminDashboardController {
             cartellaStorico.mkdir();
         }
         
-        File[] salvataggi = cartellaStorico.listFiles((dir, name) -> name.endsWith(".dat"));
-        if (salvataggi != null && salvataggi.length > 0) {
-            try {
-                Object[] dati = FileManager.caricaDizionarioETesto(salvataggi[0].getAbsolutePath());
-                Map<String, Long> mappa = (Map<String, Long>) dati[0];
-                String testo = (String) dati[1];
-                
-                this.testoIntegraleCorrente = testo; // Salviamo il testo in memoria
-                
-                tabellaParole.getItems().addAll(mappa.entrySet());
-                lblNomeFile.setText("Ripristinato: " + salvataggi[0].getName().replace(".dat", ""));
-                
-                if (serverManager != null) {
-                    serverManager.setDatiSfida(mappa, testo);
-                }
-            } catch (Exception e) {
-                System.err.println("Errore ripristino inizializzazione: " + e.getMessage());
-            }
-        }
-        
         // Forza l'auto-adattamento delle colonne eliminando la colonna vuota a destra
         tabellaVittorie.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tabellaTempi.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tabellaParole.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
         aggiornaTendinaStorico();
     }
