@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_client.controller.ScreenGameController">
+<StackPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="guesstheword_client.controller.GameController">
    <children>
       
       <TabPane fx:id="mainGameContainer" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #E3F2FD; -fx-tab-header-background: transparent;">
