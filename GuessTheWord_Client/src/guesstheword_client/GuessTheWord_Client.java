@@ -18,48 +18,29 @@ import javafx.stage.Stage;
 public class GuessTheWord_Client extends Application {
     
     /**
-     * @brief Inizializza e avvia la schermata principale dell'applicazione.
-     * * Il metodo carica il file FXML per la vista di autenticazione, recupera i dati di 
-     * configurazione di rete tramite ConfigManager, tenta di stabilire una connessione 
-     * con il server e, in caso di successo, avvia un thread dedicato alla gestione 
-     * dei messaggi di rete in background. Infine, mostra la finestra (Stage) all'utente.
-     * * @param stage Rappresenta lo stage principale dell'applicazione JavaFX fornito dalla JVM.
-     * * @pre Il file "AuthView.fxml" deve essere presente nel percorso specificato e il 
-     * ConfigManager deve essere in grado di fornire IP e porta.
-     * * @post L'interfaccia grafica viene mostrata a schermo, se la connessione ha successo, 
-     * un thread di ascolto di rete parallelo viene avviato e collegato al controller.
-     * * @throws Exception Se si verifica un errore critico durante il caricamento del file FXML 
-     * (IOException) o durante l'inizializzazione dei componenti grafici.
+     * @brief Inizializza e mostra la finestra principale di autenticazione del client.
+     * * Il metodo si occupa esclusivamente della gestione dell'interfaccia grafica: carica il 
+     * file FXML, imposta la scena sullo stage principale e mostra la finestra all'utente. 
+     * Successivamente, recupera il controller associato alla vista e gli delega l'avvio 
+     * della connessione di rete in background, garantendo che la UI rimanga immediatamente reattiva.
+     * * @param stage Lo stage principale dell'applicazione JavaFX.
+     * * @pre Il file "AuthView.fxml" deve essere presente nel percorso specificato.
+     * @post La finestra grafica viene mostrata a schermo all'istante e viene avviata la 
+     * procedura asincrona di connessione al server.
      */
 
     @Override
     public void start(Stage stage) throws Exception {
-        // Carica il file FXML della schermata di gioco
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/guesstheword_client/view/AuthView.fxml"));
         Parent root = loader.load();
-        
-        // Recupera il controller 
-        AuthController controllerAuth = loader.getController();
-        
-        String ipServer = ConfigManager.getServerIp();
-        int portaServer = ConfigManager.getServerPort();
-
-        ClientConnection connessione = new ClientConnection(ipServer, portaServer);
-        
-        if (connessione.connetti()) {
-            // Collega la rete al controller
-            controllerAuth.setClientConnection(connessione);
-            
-            // Fa partire il thread di ascolto della rete
-            Thread t = new Thread(connessione);
-            t.start();
-        }
-
-        // Mostra la finestra del gioco
+    
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.setTitle("Guess The Word - Autenticazione");
-        stage.show();
+        stage.show(); 
+    
+        AuthController controllerAuth = loader.getController();
+        controllerAuth.inizializzaConnessione(); 
     }
 
     /**

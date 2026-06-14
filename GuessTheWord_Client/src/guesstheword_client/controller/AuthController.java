@@ -5,9 +5,11 @@
  */
 package guesstheword_client.controller;
 
+import guesstheword_client.ConfigManager;
 import guesstheword_client.network.ClientConnection;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -86,6 +88,45 @@ public class AuthController {
      * @brief Riferimento alla connessione di rete attiva per l'invio dei comandi. 
     */
     private ClientConnection clientConnection;
+    
+    /**
+     * @brief Inizializza la connessione di rete con il server in modo asincrono.
+     * * Il metodo crea ed avvia un thread separato (background) per gestire il tentativo 
+     * di connessione al server. In questo modo si evita il congelamento (freezing) dell'interfaccia 
+     * grafica (UI) di JavaFX. Se la connessione ha successo, il riferimento viene associato al controller 
+     * in modo thread-safe e viene avviato il thread di ascolto dei messaggi.
+     * * @pre Il ConfigManager deve essere configurato correttamente con l'IP e la porta del server.
+     * @post L'interfaccia grafica rimane reattiva; se la connessione fallisce viene mostrato un 
+     * messaggio di errore nella console, se ha successo l'applicazione è pronta a scambiare dati.
+     */
+    public void inizializzaConnessione() {
+        Thread reteThread = new Thread(() -> {
+            try {
+                String ipServer = ConfigManager.getServerIp();
+                int portaServer = ConfigManager.getServerPort();
+            
+                ClientConnection connessione = new ClientConnection(ipServer, portaServer);
+            
+                if (connessione.connetti()) {
+                    Platform.runLater(() -> {
+                        this.setClientConnection(connessione);
+                    });
+
+                // Avvio del thread di ascolto dei messaggi del server
+                Thread t = new Thread(connessione);
+                t.start();
+                } else {
+                    System.out.println("Server offline!");
+                }
+            } catch (Exception e) {
+                System.out.println("Errore di connessione: " + e.getMessage());
+            }
+        });
+    
+        //Stop del thread al chiudersi della finestra
+        reteThread.setDaemon(true); // Se chiudi la finestra, il thread si stoppa da solo
+        reteThread.start();
+    }
     
     /**
      * @brief Configura la connessione di rete corrente e vi si registra come controller.
