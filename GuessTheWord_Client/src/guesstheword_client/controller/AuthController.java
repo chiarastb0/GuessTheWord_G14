@@ -134,7 +134,7 @@ public class AuthController {
         String pass = txtLoginPass.getText().trim();
 
         if (user.isEmpty() || pass.isEmpty()) {
-            lblErroreLogin.setText("⚠️ Compila tutti i campi!");
+            lblErroreLogin.setText("Compila tutti i campi!");
             return;
         }
 
@@ -142,7 +142,7 @@ public class AuthController {
             lblErroreLogin.setText("Tentativo di accesso in corso...");
             clientConnection.spedisciMessaggio("LOGIN:" + user + ":" + pass);
         } else {
-            lblErroreLogin.setText("❌ Errore: Nessuna connessione al server.");
+            lblErroreLogin.setText("Errore: Nessuna connessione al server.");
         }
     }
 
@@ -163,7 +163,7 @@ public class AuthController {
         String ruolo = comboRuolo.getText().trim();
 
         if (user.isEmpty() || pass.isEmpty() || passConfirm.isEmpty() || ruolo.isEmpty()) {
-            lblErroreReg.setText("⚠️ Compila tutti i campi!");
+            lblErroreReg.setText("Compila tutti i campi!");
             return;
         }
 
@@ -173,7 +173,7 @@ public class AuthController {
         }
 
         if (user.contains(":") || pass.contains(":")) {
-            lblErroreReg.setText(" L'uso dei due punti ':' non è consentito.");
+            lblErroreReg.setText("L'uso dei due punti ':' non è consentito.");
             return;
         }
 
@@ -181,7 +181,7 @@ public class AuthController {
             lblErroreReg.setText("Registrazione in corso...");
             clientConnection.spedisciMessaggio("REGISTRAZIONE:" + user + ":" + pass + ":" + ruolo);
         } else {
-            lblErroreReg.setText("❌ Errore: Nessuna connessione al server.");
+            lblErroreReg.setText("Errore: Nessuna connessione al server.");
         }
     }
     
@@ -199,7 +199,7 @@ public class AuthController {
     public void gestisciLoginSuccess(ClientConnection connessione, String ruolo) {
     try {
             if (ruolo.equals("ADMIN")) {
-                mostraMessaggioErroreLogin("❌ Accesso negato: l'acesso è riservato ai Player.");
+                mostraMessaggioErroreLogin("Accesso negato: l'acesso è riservato ai Player.");
                 return; 
             }
  
@@ -223,7 +223,7 @@ public class AuthController {
         } catch (Exception e) {
             System.err.println("Errore durante il cambio di scena verso la lobby: " + e.getMessage());
             e.printStackTrace();
-            mostraMessaggioErroreLogin("❌ Errore nel caricamento della lobby di attesa.");
+            mostraMessaggioErroreLogin("Errore nel caricamento della lobby di attesa.");
         }
     }
     
