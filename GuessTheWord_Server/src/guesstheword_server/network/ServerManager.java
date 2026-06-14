@@ -13,10 +13,10 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Gestore centrale del Server (Core Engine).
+ * Gestore centrale del Server.
  * Accetta le connessioni in entrata, gestisce la coda di matchmaking (Lobby) 
  * e orchestra l'intera logica di gioco (estrazione parole, timer, calcolo punteggi).
- * * @author angel
+ * 
  */
 public class ServerManager {
     
@@ -125,11 +125,10 @@ public class ServerManager {
             progressiGiocatori.put(gh, new HashSet<>());
         }
         
-        // =========================================================================
+        
         // GESTIONE FALLBACK DI SICUREZZA
         // Se l'admin avvia il server senza caricare file, evitiamo il crash del sistema
         // fornendo una partita di emergenza predefinita.
-        // =========================================================================
         if (dizionarioAttivo == null || dizionarioAttivo.isEmpty() || testoIntegraleAttivo == null) {
             this.testoIntegraleAttivo = "Non Fare l'avvocato delle cause perse";
             
@@ -161,7 +160,6 @@ public class ServerManager {
             
             return; // Terminiamo qui l'esecuzione per questa partita di emergenza
         }
-        // =========================================================================
 
         // 2. Configurazione Dinamica dei Parametri (Algoritmo principale)
         int numeroParoleDaEstrarre = 1;

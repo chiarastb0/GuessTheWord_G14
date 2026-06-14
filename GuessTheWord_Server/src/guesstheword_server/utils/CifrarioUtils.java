@@ -1,21 +1,25 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package guesstheword_server.utils;
 
 /**
- *
- * @author Chiara
+ * Classe di utilità che fornisce i metodi per l'offuscamento delle parole.
+ * Implementa la logica crittografica basata sul Cifrario di Cesare.
+ * 
  */
 public class CifrarioUtils {
-     //Applica il Cifrario di Cesare a una stringa.
-     //Mantiene le lettere maiuscole/minuscole e ignora i caratteri non alfabetici (es. punteggiatura).
+    
+    /**
+     * Applica il Cifrario di Cesare a una stringa di testo.
+     * Mantiene inalterate le lettere maiuscole e minuscole e ignora i caratteri 
+     * non alfabetici (come punteggiatura, numeri o spazi).
+     * * @param testo La parola o frase in chiaro da cifrare.
+     * @param shift Il numero di posizioni (chiave) di cui far scorrere le lettere nell'alfabeto.
+     * @return La stringa cifrata e offuscata.
+     */
     public static String cifratura(String testo, int shift) {
         StringBuilder risultato = new StringBuilder();
         
-        // Normalizza lo shift nell'intervallo 0-25
+        // Normalizza lo shift nell'intervallo 0-25 per gestire senza errori 
+        // eventuali valori negativi o maggiori di 26
         shift = (shift % 26 + 26) % 26; 
 
         for (char carattere : testo.toCharArray()) {
@@ -26,8 +30,8 @@ public class CifrarioUtils {
             }
             risultato.append(carattere);
         }
+        
         return risultato.toString();
     }
-}
-    
+} 
 

@@ -1,13 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package guesstheword_server;
 
-import guesstheword_server.db.DatabaseManager;
-import guesstheword_server.network.*;
-import java.sql.Connection;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,11 +7,17 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
- *
- * @author admin
+ * Classe principale (Main) che avvia l'applicazione Server con interfaccia grafica JavaFX.
+ * Inizializza la prima schermata di autenticazione per l'amministratore.
+ * 
  */
 public class GuessTheWord_Server extends Application {
     
+    /**
+     * Metodo di partenza di JavaFX che prepara e mostra la finestra principale.
+     * * @param stage La finestra principale (Stage) fornita dal framework JavaFX.
+     * @throws Exception Se si verificano errori nel caricamento o nel parsing del file FXML.
+     */
     @Override
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/guesstheword_server/view/ServerLoginView.fxml"));
@@ -32,7 +30,8 @@ public class GuessTheWord_Server extends Application {
     }
 
     /**
-     * @param args the command line arguments
+     * Metodo main standard di Java che lancia l'applicazione.
+     * * @param args Gli argomenti passati da riga di comando all'avvio.
      */
     public static void main(String[] args) {
         launch(args);   
