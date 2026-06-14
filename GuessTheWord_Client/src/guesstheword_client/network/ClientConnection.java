@@ -5,11 +5,6 @@
  */
 package guesstheword_client.network;
 
-/**
- *
- * @author admin
- */
-
 import guesstheword_client.controller.*;
 import guesstheword_server.model.PacchettoSfida;
 import java.io.IOException;
@@ -19,43 +14,91 @@ import java.net.Socket;
 import javafx.application.Platform;
 
 /**
- * Gestisce la connessione Socket lato Client e l'ascolto asincrono dei messaggi del Server.
+ * @class ClientConnection
+ * @brief Gestisce la connessione Socket lato Client e l'ascolto asincrono dei messaggi del Server.
+ * Implementa l'interfaccia Runnable per poter eseguire la lettura dei dati provenienti 
+ * dal Server all'interno di un thread dedicato, evitando così di bloccare l'interfaccia grafica.
  */
 public class ClientConnection implements Runnable {
 
+    /** 
+     * @brief Indirizzo IP del Server a cui connettersi. 
+    */
     private final String ip;
+    
+    /** 
+     * @brief Porta del Server sulla quale stabilire la sessione. 
+    */
     private final int porta;
+    
+    /** 
+     * @brief Il socket effettivo della connessione corrente. 
+     */
     private Socket socket;
     
-    // Canali per comunicare con il Server
+    /** 
+     * @brief Canale di input per la ricezione di oggetti serializzati dal Server. 
+    */
     private ObjectInputStream in;
+    
+    /** 
+     * @brief Canale di output per l'invio di oggetti serializzati al Server. 
+    */
     private ObjectOutputStream out;
     
+    /** 
+     * @brief Flag booleano per controllare il ciclo di vita del thread di ascolto. 
+    */
     private boolean inAscolto = true;
 
-    // Riferimento al controller della schermata di gioco 
-    private ScreenGameController controllerGioco;
+    /** 
+     * @brief Riferimento al controller della schermata di gioco principale (JavaFX). 
+    */
+    private GameController controllerGioco;
+    
+    /** 
+     * @brief Riferimento al controller della schermata di autenticazione/registrazione (JavaFX). 
+    */
     private AuthController controllerAuth;
+    
+    /** 
+     * @brief Riferimento al controller della lobby principale e gestione classifiche (JavaFX). 
+    */
     private LobbyController controllerLobby;
     
-    private String cacheStorico = null; // Il nostro cassetto temporaneo
+    /** 
+     * @brief Cassetto temporaneo (cache) per memorizzare i dati dello storico nel caso in cui la schermata della Lobby non sia ancora pronta. 
+    */
+    private String cacheStorico = null;
     
-    //variabile per salvare lo username del client
+    /** 
+     * @brief Memorizza lo username dell'utente loggato su questa sessione client. 
+    */
     private String usernameLoggato = "";
 
-    
+    /**
+     * @brief Restituisce lo username dell'utente attualmente loggato.
+     * @return String Lo username salvato nel client.
+     */
     public String getUsernameLoggato() {
         return this.usernameLoggato;
     }
     
+    /**
+     * @brief Costruttore della classe ClientConnection.
+     * Configura i parametri di rete essenziali senza avviare la connessione.
+     * @param ip    L'indirizzo IP del Server.
+     * @param porta La porta del Server.
+     */
     public ClientConnection(String ip, int porta) {
         this.ip = ip;
         this.porta = porta;
     }
 
     /**
-     * Tenta la connessione iniziale con il Server.
-     * @return true se la connessione è riuscita, false altrimenti.
+     * @brief Tenta la connessione iniziale con il Server e inizializza gli stream di Input/Output.
+     * L'ObjectOutputStream viene flushato immediatamente per evitare deadlock di inizializzazione dello stream Socket.
+     * @return true se la connessione è riuscita e i flussi sono pronti, false altrimenti.
      */
     public boolean connetti() {
         try {
@@ -72,7 +115,11 @@ public class ClientConnection implements Runnable {
     }
 
     /**
-     * Ciclo continuo di ascolto dei messaggi provenienti dal ClientHandler del Server.
+     * @brief Ciclo continuo di ascolto dei messaggi provenienti dal ClientHandler del Server.
+     * Legge gli oggetti in arrivo dal canale di input in modo asincrono. 
+     * Gestisce due casistiche principali di messaggi:
+     * - Caso 1 (String): Messaggi di testo ordinari delegati a elaboraMessaggioServer().
+     * - Caso 2 (PacchettoSfida): Ricezione di aggiornamenti della parola cifrata e timer.
      */
     @Override
     public void run() {
@@ -80,28 +127,25 @@ public class ClientConnection implements Runnable {
             Object objRicevuto;
             while (inAscolto && (objRicevuto = in.readObject()) != null) {
                 
-                // CASO 1: Stringhe di testo e Protocollo comandi
+                //Caso 1
                 if (objRicevuto instanceof String) {
                     String rigaRicevuta = (String) objRicevuto;
                     System.out.println("[SERVER DICE]: " + rigaRicevuta);
                     elaboraMessaggioServer(rigaRicevuta); 
                 }
                 
-                // CASO 2: Serializzazione Oggetto PacchettoSfida
+                // Caso 2
                 else if (objRicevuto instanceof PacchettoSfida) {
                     PacchettoSfida pacchetto = (PacchettoSfida) objRicevuto;
                     
-                    System.out.println("==================================================");
+ 
                     System.out.println("[TEST RICEZIONE CLIENT]");
                     System.out.println("Testo della sfida: " + pacchetto.getParolaCifrata());
-                    System.out.println("==================================================");
-                    
+           
                     if (controllerGioco != null) {
-                        // GIOCO IN CORSO: Qualcuno ha indovinato una parola, aggiorniamo solo il testo grafico!
                         controllerGioco.aggiornaTestoDinamicamente(pacchetto.getParolaCifrata());
                     }
                     else if (controllerLobby != null) {
-                        // Passiamo i dati direttamente al metodo aggiornato
                         controllerLobby.avviaSchermataGioco(
                             String.valueOf(pacchetto.getDurataTimerSecondi()), 
                             pacchetto.getParolaCifrata()
@@ -120,14 +164,28 @@ public class ClientConnection implements Runnable {
 
 
     /**
-     * Parsing del protocollo speculare a quello del Server.
+     * @brief Parsing del protocollo speculare a quello del Server.
+     * Analizza i comandi testuali in arrivo dal Server ed esegue le relative azioni grafiche 
+     * incapsulandole all'interno di Platform.runLater() per rispettare il thread-safety di JavaFX.
+     * I comandi gestiti dallo switch-case sono:
+     * - LOGIN_SUCCESS: Estrae ruolo e username, notificando l'accesso riuscito a AuthController.
+     * - LOGIN_FAIL: Mostra il messaggio d'errore del server sul pannello di login.
+     * - REG_SUCCESS: Gestisce la registrazione completata e torna al login.
+     * - REG_FAIL: Visualizza l'errore specifico (es. utente duplicato) nel form di registrazione.
+     * - START_GAME: Estrae i parametri di inizializzazione del match e avvia la schermata di gioco dalla Lobby.
+     * - NOTIFICA: Invia un popup testuale o un avviso in tempo reale al controller di gioco.
+     * - FINE_PARTITA: Notifica l'esito della partita per mostrare il resoconto finale a schermo.
+     * - DATI_CLASSIFICA: Pulisce e ricompone riga per riga la TableView della classifica.
+     * - DATI_STORICO: Riceve lo storico del giocatore; lo stampa direttamente se la lobby esiste, altrimenti popola la cache locale.
+     * - RISPOSTA_ERRATA: Mostra un feedback grafico temporaneo di errore senza interrompere la digitazione.
+     * - ERRORE: Stampa sul log di sistema gli errori imprevisti notificati dal Server.
+     * * @param messaggio Il messaggio testuale grezzo inviato dal Server.
      */
     private void elaboraMessaggioServer(String messaggio) {
         
-        // Rimuoviamo eventuali spazi o ritorni a capo trasmessi dal flusso di rete all'inizio/fine
         messaggio = messaggio.trim();
         
-        // Separiamo l'intestazione del comando dal resto dei dati
+        // Separazione dell'intestazione del comando dal resto dei dati
         String[] parti = messaggio.split(":", 2); 
         if (parti.length == 0) return;
 
@@ -147,8 +205,6 @@ public class ClientConnection implements Runnable {
                 if (controllerAuth != null) {
                     Platform.runLater(() -> {
                         controllerAuth.mostraMessaggioErroreLogin("✅Accesso riuscito!");
-                        // Nota: qui potrai inserire la logica del cambio di scena
-                        // verso l'interfaccia di gioco effettiva
                         controllerAuth.gestisciLoginSuccess(this, ruolo);
                     });
                 }
@@ -166,14 +222,12 @@ public class ClientConnection implements Runnable {
             case "REG_SUCCESS":
                 System.out.println("[REGISTRAZIONE] Risposta di successo elaborata correttamente.");
                 if (controllerAuth != null) {
-                // Recuperiamo il messaggio reale inviato dal server (se presente), altrimenti usiamo uno di fallback
                     final String messaggioServer = (parti.length >= 2) ? parti[1].trim() : "Registrazione completata!";
                 
                     Platform.runLater(() -> {
-                        controllerAuth.mostraMessaggioErroreReg(""); // Svuota l'errore nel pannello reg
-                        controllerAuth.mostraPannelloLogin(null);   // Scambia i pannelli VBox
+                        controllerAuth.mostraMessaggioErroreReg("");
+                        controllerAuth.mostraPannelloLogin(null);   
                     
-                        // Mostriamo a schermo il vero messaggio che arriva dal server!
                         controllerAuth.mostraMessaggioErroreLogin("✅ " + messaggioServer);
                     });
                 }
@@ -195,7 +249,7 @@ public class ClientConnection implements Runnable {
                     String testoCifrato = sottoParti[1];
 
                     if (controllerLobby != null) {
-                        // Passiamo i dati direttamente al metodo aggiornato
+
                         controllerLobby.avviaSchermataGioco(tempoInSecondi, testoCifrato);
                     }
                 }
@@ -211,7 +265,6 @@ public class ClientConnection implements Runnable {
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
                 if (controllerGioco != null) {
                     final String messaggioFinale = messaggio;
-                    // Passiamo il controllo al controller di gioco per il pop-up e lo smistamento
                     Platform.runLater(() -> {
                         controllerGioco.gestisciFinePartita(messaggioFinale);
                     });
@@ -223,7 +276,7 @@ public class ClientConnection implements Runnable {
                     String contenuto = parti[1];
                     if (controllerLobby != null) {
                         Platform.runLater(() -> {
-                            controllerLobby.svuotaClassifica(); // Puliamo la classifica vecchia!
+                            controllerLobby.svuotaClassifica(); 
                             if (!contenuto.equalsIgnoreCase("VUOTO")) {
                                 String[] righeGiocatori = contenuto.split(";");
                                 for (String riga : righeGiocatori) {
@@ -246,13 +299,11 @@ public class ClientConnection implements Runnable {
                  String contenutoStorico = parti[1];
 
                  if (controllerLobby != null) {
-                     // Finestra già aperta, stampiamo subito
                     Platform.runLater(() -> {
-                            controllerLobby.svuotaStorico(); // Puliamo lo storico vecchio!
+                            controllerLobby.svuotaStorico(); 
                             elaboraStoricoGrafica(contenutoStorico);
                         });
                  } else {
-                     // Finestra in caricamento, salviamo i dati in memoria
                      this.cacheStorico = contenutoStorico;
                  }
              }
@@ -261,7 +312,6 @@ public class ClientConnection implements Runnable {
             case "RISPOSTA_ERRATA":
                 if (controllerGioco != null) {
                     Platform.runLater(() -> {
-                        // Facciamo apparire il testo dinamico senza bloccare il gioco!
                         controllerGioco.mostraMessaggioErroreTemporaneo("Sbagliato, ritenta!");
                     });
                 }
@@ -278,7 +328,9 @@ public class ClientConnection implements Runnable {
     }
 
     /**
-     * Invia un messaggio testuale (comando) al ClientHandler del Server.
+     * @brief Invia un messaggio testuale (comando) al ClientHandler del Server.
+     * @details Serializza una stringa e la trasmette immediatamente lungo il canale di output effettuando un flush().
+     * @param messaggio Il comando testuale da inoltrare al Server.
      */
     public void spedisciMessaggio(String messaggio) {
         try {
@@ -291,40 +343,67 @@ public class ClientConnection implements Runnable {
         }
     }
         
+    /**
+     * @brief Registra il riferimento dell'AuthController.
+     * @param controller Il controller della schermata di autenticazione.
+     */
     public void setControllerAuth(AuthController controller) {
         this.controllerAuth = controller;
     }
     
+    /**
+     * @brief Registra il riferimento del controller di gioco principale.
+     * Permette allo ScreenGameController di "registrarsi" così da poter ricevere 
+     * i testi cifrati non appena la partita comincia o subisce modifiche in tempo reale.
+     * @param controller Il controller della schermata di gioco.
+     */
+    public void setControllerGioco(GameController controller) {
+        this.controllerGioco = controller;
+    }
+    
+    /**
+     * @brief Registra il riferimento del LobbyController e gestisce l'eventuale svuotamento della cache.
+     * Se al momento della configurazione della lobby sono presenti dati dello storico salvati in precedenza 
+     * nella `cacheStorico`, questi vengono processati immediatamente all'interno del Thread JavaFX.
+     * @param controller Il controller della schermata Lobby.
+     */
     public void setControllerLobby(LobbyController controller) {
      this.controllerLobby = controller;
 
-     // Appena la Lobby è pronta, controlliamo se c'erano dati in attesa!
+     // Controllo di dati "in attesa"
      if (this.cacheStorico != null) {
          String datiInSospeso = this.cacheStorico;
          Platform.runLater(() -> elaboraStoricoGrafica(datiInSospeso));
-         this.cacheStorico = null; // Svuotiamo il cassetto
+         this.cacheStorico = null; 
      }
     }
     
+    /**
+     * @brief Analizza la stringa dello storico ed effettua la ricostruzione dei record.
+     * Suddivide i record delimitati da ';' e ricompone i dati delimitati da ','. 
+     * Prevede una logica flessibile basata sugli indici inversi per ricostruire frasi o parole complesse 
+     * contenenti virgole, assumendo che l'esito sia sempre al penultimo posto e il punteggio all'ultimo.
+     * @param contenutoStorico La stringa grezza ricevuta contenente i dati dello storico.
+     */
     private void elaboraStoricoGrafica(String contenutoStorico) {
-        if (contenutoStorico.equalsIgnoreCase("VUOTO") || controllerLobby == null) return;
+        if (contenutoStorico.equalsIgnoreCase("VUOTO") || controllerLobby == null) 
+            return;
 
         String[] righeStorico = contenutoStorico.split(";");
         for (String riga : righeStorico) {
             if (!riga.trim().isEmpty()) {
                 String[] dati = riga.split(",");
                 
-                // Ci assicuriamo di avere almeno Data, Parola, Esito e Punteggio
+                // Verifica della presenza di almeno Data, Parola, Esito e Punteggio
                 if (dati.length >= 4) {
                     String data = dati[0];
-                    String punteggioStr = dati[dati.length - 1]; // L'ultimo elemento è sempre il punteggio
-                    String esito = dati[dati.length - 2];        // Il penultimo è sempre l'esito
+                    String punteggioStr = dati[dati.length - 1];
+                    String esito = dati[dati.length - 2];        
                     
-                    // Tutto ciò che sta in mezzo sono le parole! Le ricostruiamo.
+                    // Ricostruzione delle parole
                     StringBuilder parolaRicostruita = new StringBuilder();
                     for (int i = 1; i < dati.length - 2; i++) {
                         parolaRicostruita.append(dati[i]);
-                        // Se ci sono più parole, rimettiamo la virgola per la grafica
                         if (i < dati.length - 3) {
                             parolaRicostruita.append(", ");
                         }
@@ -345,16 +424,11 @@ public class ClientConnection implements Runnable {
         }
     }
     
-    /**
-     * Permette al tuo SchermataGiocoController di "registrarsi" così da poter ricevere
-     * i testi cifrati non appena la partita comincia.
-     */
-    public void setControllerGioco(ScreenGameController controller) {
-        this.controllerGioco = controller;
-    }
 
     /**
-     * Chiude i flussi in modo pulito.
+     * @brief Chiude i flussi I/O e il socket in modo pulito.
+     * @details Arresta il loop di ascolto impostando `inAscolto` a false e procede alla chiusura 
+     * sequenziale di ObjectInputStream, ObjectOutputStream e del Socket se ancora aperti.
      */
     public void chiudiConnessione() {
         this.inAscolto = false;

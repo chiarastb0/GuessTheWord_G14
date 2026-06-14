@@ -14,6 +14,15 @@
             <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/GuessTheWord_Server.java</file>
             <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/ConfigManager.java</file>
             <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/config.properties</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/network/ServerManager.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/utils/CifrarioUtils.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/controller/AdminDashboardController.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/utils/FileManager.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/network/ClientHandler.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/model/Risultato.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/db/RisultatoDAO.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/model/PacchettoSfida.java</file>
+            <file>file:/C:/Users/angel/OneDrive/Documenti/NetBeansProjects/GuessTheWord_G14/GuessTheWord_Server/src/guesstheword_server/view/AdminDashboard.fxml</file>
         </group>
     </open-files>
 </project-private>

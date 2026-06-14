@@ -58,7 +58,7 @@ public class ServerLoginController implements Initializable {
 
         // 1. Validazione base: impedisce l'invio di query vuote
         if (user.isEmpty() || pass.isEmpty()) {
-            lblErroreAdmin.setText("⚠️ Compila tutti i campi!");
+            lblErroreAdmin.setText("Compila tutti i campi!");
             return;
         }
 

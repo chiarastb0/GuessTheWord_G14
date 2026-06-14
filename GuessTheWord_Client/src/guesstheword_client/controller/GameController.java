@@ -20,37 +20,95 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class ScreenGameController implements Initializable {
+/**
+ * @class GameController
+ * @brief Controlla i componenti grafici e la logica interna durante una partita.
+ * Riceve aggiornamenti in tempo reale dal thread 
+ * di rete, aggiorna la label del timer tramite una Timeline e mostra i risultati finali oscurando 
+ * l'interfaccia principale.
+ */
+public class GameController {
 
-    // --- COMPONENTI SCHEDA GIOCO ---
+    // SCHEDA GIOCO 
+    /** 
+     * @brief Etichetta per la visualizzazione del countdown dei secondi rimanenti. 
+    */
     @FXML private Label lblTimer;
+    
+    /** 
+     * @brief Etichetta per mostrare notifiche temporanee. 
+    */
     @FXML private Label lblNotifica; 
+    
+    /** 
+     * @brief Area di testo contenente il testo. 
+    */
     @FXML private TextArea txtAreaSfida;
+    
+    /** 
+     * @brief Campo di input in cui l'utente digita i propri tentativi di risposta. 
+    */
     @FXML private TextField txtRisposta;
     
-    // --- NUOVI COMPONENTI AGGIUNTI PER OVERLAY ---
-    @FXML private TabPane mainGameContainer;       // Per disabilitare i click sulla scheda sotto
-    @FXML private VBox paneRisultato;              // Il contenitore scuro a schermo intero
-    @FXML private Label lblEsitoTitolo;            // Scritta grande Vittoria/Sconfitta
-    @FXML private Label lblEsitoDescrizione;       // Testo descrittivo dei punti
+    // COMPONENTI OVERLAY 
+    /** 
+     * @brief Contenitore principale delle schede di gioco, disabilitato alla fine del match per bloccare gli input sottostanti. 
+    */
+    @FXML private TabPane mainGameContainer;
+    
+    /** 
+     * @brief Contenitore VBox posizionato in overlay per mostrare la schermata di riepilogo a fine partita. 
+    */
+    @FXML private VBox paneRisultato;
+    
+    /** 
+     * @brief Etichetta dell'overlay che mostra il titolo dell'esito. 
+     */
+    @FXML private Label lblEsitoTitolo;
+    
+    /** 
+     * @brief Etichetta dell'overlay che mostra i dettagli testuali. 
+    */
+    @FXML private Label lblEsitoDescrizione;
 
+    /** 
+     * @brief Riferimento alla connessione di rete client attiva. 
+    */
     private ClientConnection clientConnection;
+    
+    /** 
+     * @brief Timeline di JavaFX utilizzata per gestire il countdown dei secondi della sfida. 
+    */
     private Timeline timeline;
+    
+    /** 
+     * @brief Contatore intero dei secondi rimanenti prima della scadenza del tempo. 
+    */
     private int secondiRimanenti;
+    
+    /** 
+     * @brief Timeline secondaria utilizzata per far scomparire le notifiche flash dopo un timeout prestabilito. 
+    */
     private Timeline timelineErrore; 
 
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
-        // Inizializzazione pulita
-    }    
-    
+    /**
+     * @brief Associa la connessione di rete corrente al controller e si registra all'interno di essa.
+     * @param connessione L'istanza di ClientConnection attiva.
+     */
     public void setClientConnection(ClientConnection connessione) {
         this.clientConnection = connessione;
         this.clientConnection.setControllerGioco(this);
     }
 
+    /**
+     * @brief Predispone l'interfaccia grafica e avvia il timer per una nuova sessione di gioco.
+     * Resetta la visibilità dell'overlay, riabilita il contenitore principale, inserisce il 
+     * testo cifrato iniziale e configura una Timeline per aggiornare il countdown grafico.
+     * @param tempo         La durata totale della sfida espressa in secondi (sotto forma di stringa).
+     * @param testoCifrato  La stringa oscurata iniziale da indovinare.
+     */
     public void inizializzaPartita(String tempo, String testoCifrato) {
-        // Ripristiniamo lo stato della UI in caso di partite multiple consecutive
+        // Ripristino dello stato della UI in caso di partite multiple consecutive
         paneRisultato.setVisible(false);
         mainGameContainer.setDisable(false);
         
@@ -81,6 +139,11 @@ public class ScreenGameController implements Initializable {
         timeline.play();
     }
 
+    /**
+     * @brief Estrae la risposta inserita dall'utente e la inoltra al server.
+     * Metodo attivato alla pressione del tasto Invio nel campo di testo, se l'input non è vuoto,
+     * trasmette il comando nel formato `RISPOSTA:testo_inserito` e svuota il campo.
+     */
     @FXML
     private void gestisciInvioRisposta() {
         String invio = txtRisposta.getText().trim();
@@ -91,24 +154,26 @@ public class ScreenGameController implements Initializable {
     }
     
     /**
-     * Gestisce la fine della partita mostrando l'overlay grafico in-game
+     * @brief Interrompe la partita e mostra l'overlay grafico con l'esito finale.
+     * Esegue il parsing del messaggio di fine partita inviato dal server (`FINE_PARTITA:ESITO:DESCRIZIONE`).
+     * Attraverso Platform.runLater() ferma il timer, disabilita l'interfaccia di gioco sottostante e personalizza 
+     * i testi dell'overlay a seconda del risultato (VITTORIA, SCONFITTA, PAREGGIO).
+     * @param messaggioRete Il messaggio di protocollo ricevuto dal server.
      */
     public void gestisciFinePartita(String messaggioRete) {
         String[] parti = messaggioRete.split(":", 3); 
         if (parti.length < 3) return;
 
-        String esito = parti[1]; // VITTORIA, SCONFITTA o PAREGGIO
-        String testoAvviso = parti[2]; // La spiegazione del server
+        String esito = parti[1]; 
+        String testoAvviso = parti[2]; 
 
         Platform.runLater(() -> {
             if (timeline != null) {
-                timeline.stop(); // Blocchiamo il tempo residuo
+                timeline.stop(); 
             }
             
-            // 1. Congeliamo l'interfaccia sotto
             mainGameContainer.setDisable(true);
             
-            // 2. Personalizziamo i testi dell'overlay
             lblEsitoDescrizione.setText(testoAvviso);
             
             switch (esito) {
@@ -123,13 +188,16 @@ public class ScreenGameController implements Initializable {
                     break;
             }
 
-            // 3. Mostriamo l'overlay oscurando la UI
             paneRisultato.setVisible(true);
         });
     }
     
     /**
-     * Azione collegata al bottone dell'overlay per ritornare alla lobby
+     * @brief Gestisce il cambio di scena per ritornare alla Lobby principale del client.
+     * Viene invocato al click sul pulsante presente all'interno dell'overlay di fine partita. 
+     * Carica il file FXML `LobbyView.fxml`, istanzia il relativo controller riassegnando i puntatori di rete 
+     * ed azzerando il riferimento al gioco corrente, infine richiede al server un aggiornamento immediato 
+     * di storico e classifica per la schermata appena caricata.
      */
     @FXML
     private void ritornoAllaLobby() {
@@ -138,13 +206,11 @@ public class ScreenGameController implements Initializable {
             Parent lobbyRoot = loader.load();
 
             LobbyController controllerLobby = loader.getController();
-            
-            // Ripristiniamo i puntatori di rete verso il controller lobby
+
             controllerLobby.setClientConnection(clientConnection);
             clientConnection.setControllerLobby(controllerLobby);
-            clientConnection.setControllerGioco(null); // Rilasciamo il gioco attuale
+            clientConnection.setControllerGioco(null);
 
-            // Cambiamo scena sulla finestra attuale
             Stage stage = (Stage) paneRisultato.getScene().getWindow();
             Scene scenaLobby = new Scene(lobbyRoot);
             stage.setScene(scenaLobby);
@@ -154,7 +220,6 @@ public class ScreenGameController implements Initializable {
 
             System.out.println("[GUI] Ritorno alla lobby completato con successo via Overlay.");
             
-            // Aggiorniamo istantaneamente i dati delle classifiche/storici della lobby ricaricata
             clientConnection.spedisciMessaggio("RICHIEDI_STORICO");
             clientConnection.spedisciMessaggio("RICHIEDI_CLASSIFICA");
 
@@ -164,19 +229,33 @@ public class ScreenGameController implements Initializable {
         }
     }
     
+    /**
+     * @brief Aggiorna dinamicamente l'area di testo della sfida con la nuova stringa cifrata.
+     *  Richiamato dal thread di rete quando un qualunque utente indovina una parola, 
+     * aggiorna il testo visibile e pulisce il campo di input della risposta all'interno del thread JavaFX.
+     * @param nuovoTesto Il nuovo testo parzialmente oscurata inviata dal server.
+     */
     public void aggiornaTestoDinamicamente(String nuovoTesto) {
         Platform.runLater(() -> {
             txtAreaSfida.setText(nuovoTesto);
             txtRisposta.clear(); 
         });
     }
-
+    
+    /**
+     * @brief Visualizza una notifica testuale nell'interfaccia di gioco.
+     * @param messaggio Il testo della notifica da mostrare.
+     */
     public void mostraNotifica(String messaggio) {
-        // Questo metodo mostrava un alert.show() asincrono fastidioso, lo convertiamo
-        // per usare la label interna temporanea così da non interrompere l'esperienza utente.
         mostraMessaggioErroreTemporaneo(messaggio);
     }
     
+    /**
+     * @brief Mostra un messaggio di errore temporaneo sulla label delle notifiche.
+     * Gestisce la comparsa del testo e configura una Timeline dedicata della durata di 2 secondi 
+     * per provvedere alla sua cancellazione automatica.
+     * @param messaggio Il testo dell'errore da visualizzare provvisoriamente.
+     */
     public void mostraMessaggioErroreTemporaneo(String messaggio) {
         if (timelineErrore != null) {
             timelineErrore.stop();
