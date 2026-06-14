@@ -173,7 +173,6 @@ public class ClientConnection implements Runnable {
      * - REG_SUCCESS: Gestisce la registrazione completata e torna al login.
      * - REG_FAIL: Visualizza l'errore specifico (es. utente duplicato) nel form di registrazione.
      * - START_GAME: Estrae i parametri di inizializzazione del match e avvia la schermata di gioco dalla Lobby.
-     * - NOTIFICA: Invia un popup testuale o un avviso in tempo reale al controller di gioco.
      * - FINE_PARTITA: Notifica l'esito della partita per mostrare il resoconto finale a schermo.
      * - DATI_CLASSIFICA: Pulisce e ricompone riga per riga la TableView della classifica.
      * - DATI_STORICO: Riceve lo storico del giocatore; lo stampa direttamente se la lobby esiste, altrimenti popola la cache locale.
@@ -255,11 +254,6 @@ public class ClientConnection implements Runnable {
                 }
                 break;
             
-            case "NOTIFICA":
-                if(parti.length >= 2 && controllerGioco != null){
-                    controllerGioco.mostraNotifica(parti[1]);
-                }
-                break;
                 
             case "FINE_PARTITA":
                 System.out.println("[RETE CLIENT] Esito ricevuto: " + messaggio);
