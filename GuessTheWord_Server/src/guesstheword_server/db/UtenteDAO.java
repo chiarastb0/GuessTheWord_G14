@@ -119,10 +119,6 @@ public class UtenteDAO implements DAO<Utente> {
             PreparedStatement cmd = connection.prepareStatement(sql)) {
             
             String passwordCifrata = hashPassword(password, username);
-
-            // RIGA DA AGGIUNGERE PER IL DEBUG:
-    System.out.println("[DEBUG LOGIN] Cerco Username: " + username);
-    System.out.println("[DEBUG LOGIN] Hash calcolato da Java: " + passwordCifrata);
     
             cmd.setString(1, username);
             cmd.setString(2, passwordCifrata);

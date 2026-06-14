@@ -45,7 +45,7 @@ public class ServerLoginController implements Initializable {
         String pass = txtAdminPass.getText().trim();
 
         if (user.isEmpty() || pass.isEmpty()) {
-            lblErroreAdmin.setText("⚠️ Compila tutti i campi!");
+            lblErroreAdmin.setText("Compila tutti i campi!");
             return;
         }
 
