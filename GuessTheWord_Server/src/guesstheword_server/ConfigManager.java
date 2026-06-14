@@ -32,9 +32,9 @@ public class ConfigManager {
 
     /**
      * Restituisce la porta di ascolto del server di rete.
-     * * @return Il numero della porta (es. 5000), oppure 8080 come valore di paracadute (default).
+     * * @return Il numero della porta (es. 5000) come valore di paracadute (default).
      */
     public static int getServerPort() {
-        return Integer.parseInt(props.getProperty("server.port", "8080"));
+        return Integer.parseInt(props.getProperty("server.port", "5000"));
     }
 }
